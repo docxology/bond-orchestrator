@@ -32,13 +32,17 @@ order, and the real checkpoint files.
 | File | Coverage target |
 |---|---|
 | `test_protocol.py` | Protocol conformance (isinstance + lifecycle), dependency-edge citation, determinism of providers, registry lookups |
-| `test_graph.py` | DAG construction, validation errors (self-dep, unknown node, cycle), canonical topological order, declaration-order independence |
+| `test_graph.py` | DAG construction, validation errors (self-dep, unknown node, cycle), canonical topological order, declaration-order independence, ordered cycle-path detection (`find_cycle`, `CycleError.cycle`) |
+| `test_planning.py` | Parallel-stage plans: wavefront decomposition, parallelism/critical-path metrics, determinism, cycle rejection with path |
+| `test_retry.py` | `RetryPolicy` validation, `should_retry` gate, runner retry/recovery/exhaustion, retry persistence across checkpoint/resume, `FlakyExecuteDecorator` (real deterministic wrapper) |
 | `test_runner.py` | Phase-major execution, DAG order, context feeding, consolidated debrief, runner errors, checkpoint/resume (replay + interrupt-continue), byte-equality across resume |
 | `test_missions.py` | Canned mission shapes, registry, unknown-mission errors |
-| `test_cli.py` | `list`/`run`, output artifacts (report + provenance), checkpoint-dir flag, exit codes, unknown-mission handling |
+| `test_cli.py` | `list`/`run`/`plan`, output artifacts (report + provenance), checkpoint flag, retry flag, exit codes, unknown-mission handling |
 | `test_provenance.py` | Deterministic run id, record collection, JSON/CSV writing, byte-stability across runs |
-| `test_manuscript_variables.py` | Config parsing, N/A fallbacks, strict-mode error, result-token resolution, live `{{TOKEN}}` cross-reference over manuscript sections |
+| `test_manuscript_variables.py` | Config parsing, N/A fallbacks, strict-mode error, result-token resolution, stage/retry tokens, live `{{TOKEN}}` cross-reference over manuscript sections |
 | `test_integration.py` | End-to-end OPERATION OMNIBUS + OPERATION DIAMOND over real reference providers: DAG order, consolidated debrief, determinism, checkpoint/resume identity |
+| `test_film_binding.py` | REAL film packages (goldfinger/spectre/no_time_to_die + canonical OMNIBUS): adapter lifecycle, real stage planning, real-film cycle detection, real-film retry |
+| `test_scripts_smoke.py` | Thin-script subprocess smoke (list/run/plan, unknown-mission error, draft vars) |
 
 ## Determinism in tests
 

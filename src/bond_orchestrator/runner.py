@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import cast
 
 from .graph import build_film_graph
+from .planning import StagePlan, build_stage_plan
 from .protocol import (
     BriefRecord,
     Debrief,
@@ -41,6 +42,7 @@ from .protocol import (
     PlanStep,
     ReconReport,
 )
+from .retry import RetryPolicy, RetryRecord, should_retry
 
 PHASES = ("brief", "recon", "plan", "execute", "debrief")
 
@@ -72,6 +74,8 @@ class MissionReport:
     plans: tuple[Plan, ...] = ()
     executions: tuple[ExecutionResult, ...] = ()
     debriefs: tuple[Debrief, ...] = ()
+    retries: tuple[RetryRecord, ...] = ()
+    stage_plan: StagePlan | None = None
 
     def all_verdicts_pass(self) -> bool:
         """True when every package debriefed with verdict ``"pass"``."""
@@ -80,6 +84,10 @@ class MissionReport:
     def total_steps(self) -> int:
         """Total executed plan steps across all packages."""
         return len(self.executions)
+
+    def retry_count(self) -> int:
+        """Total retried package steps (each counts once, final attempt)."""
+        return len(self.retries)
 
     def consolidated_debrief(self) -> str:
         """Render the single consolidated debrief for the mission."""
@@ -93,6 +101,9 @@ class MissionReport:
             if debrief.metrics:
                 metrics = ", ".join(f"{key}={value:g}" for key, value in sorted(debrief.metrics.items()))
                 lines.append(f"  metrics: {metrics}")
+        if self.retries:
+            rendered = ", ".join(f"{r.package_id} x{r.attempts}" for r in self.retries)
+            lines.append(f"retries: {rendered}")
         return "\n".join(lines)
 
     def as_dict(self) -> dict[str, object]:
@@ -105,6 +116,8 @@ class MissionReport:
             "plans": [p.as_dict() for p in self.plans],
             "executions": [e.as_dict() for e in self.executions],
             "debriefs": [d.as_dict() for d in self.debriefs],
+            "retries": [r.as_dict() for r in self.retries],
+            "stage_plan": self.stage_plan.as_dict() if self.stage_plan is not None else None,
             "consolidated_debrief": self.consolidated_debrief(),
         }
 
@@ -117,25 +130,35 @@ class MissionRunner:
             :class:`~bond_orchestrator.protocol.MissionProvider`.
         checkpoint_dir: Optional state dir for checkpoint/resume.  When set,
             completed steps are persisted and skipped on subsequent runs.
+        retry_policy: Optional deterministic retry policy applied to the
+            ``execute`` phase.  When set, a step whose execution returns a
+            retryable outcome is re-executed until it succeeds or
+            ``max_attempts`` are exhausted.  Retries are immediate (no
+            wall-clock backoff) so reports stay byte-deterministic.
     """
 
     def __init__(
         self,
         providers: Mapping[str, MissionProvider],
         checkpoint_dir: Path | None = None,
+        retry_policy: RetryPolicy | None = None,
     ) -> None:
         self._providers = dict(providers)
         self._checkpoint_dir = checkpoint_dir
+        self._retry_policy = retry_policy
 
     def run(self, mission: Mission) -> MissionReport:
         """Execute ``mission`` end-to-end and return the consolidated report."""
         graph = build_film_graph(mission.packages)
         order = graph.topological_order()
+        stage_plan = build_stage_plan(mission)
         state = _RunState(
             mission=mission,
             order=order,
             providers=self._providers,
             checkpoint_dir=self._checkpoint_dir,
+            retry_policy=self._retry_policy,
+            stage_plan=stage_plan,
         )
         for phase in PHASES:
             for package_id in order:
@@ -152,16 +175,21 @@ class _RunState:
         order: tuple[str, ...],
         providers: Mapping[str, MissionProvider],
         checkpoint_dir: Path | None,
+        retry_policy: RetryPolicy | None = None,
+        stage_plan: StagePlan | None = None,
     ) -> None:
         self._mission = mission
         self._order = order
         self._providers = providers
+        self._retry_policy = retry_policy
+        self._stage_plan = stage_plan
         self._context = MissionContext()
         self._briefs: list[BriefRecord] = []
         self._recon: list[ReconReport] = []
         self._plans: list[Plan] = []
         self._executions: list[ExecutionResult] = []
         self._debriefs: list[Debrief] = []
+        self._retries: list[RetryRecord] = []
         self._step_dir: Path | None = Path(checkpoint_dir) / mission.name if checkpoint_dir is not None else None
         self._manifest: set[str] = set()
         if self._step_dir is not None:
@@ -182,6 +210,7 @@ class _RunState:
             raise ProviderNotFoundError(f"no provider registered for package {package_id!r}")
         package = self._mission.package(package_id)
         payload: object
+        attempts = 1
         if phase == "brief":
             payload = BriefRecord(provider.name, package_id, provider.brief(package))
             self._briefs.append(payload)
@@ -194,9 +223,21 @@ class _RunState:
             self._plans.append(payload)
         elif phase == "execute":
             plan = self._plan_for(package_id)
+            policy = self._retry_policy
             results = provider.execute(package, plan, self._context)
+            while policy is not None and should_retry(results, policy, attempts):
+                attempts += 1
+                results = provider.execute(package, plan, self._context)
             payload = results
             self._executions.extend(results)
+            if attempts > 1:
+                record = RetryRecord(
+                    package_id=package_id,
+                    phase="execute",
+                    attempts=attempts,
+                    succeeded=all(result.outcome == "success" for result in results),
+                )
+                self._retries.append(record)
         elif phase == "debrief":
             plan = self._plan_for(package_id)
             results = self._results_for(package_id)
@@ -204,7 +245,7 @@ class _RunState:
             self._debriefs.append(payload)
         else:  # pragma: no cover - guarded by PHASES loop; kept for exhaustiveness
             raise MissionError(f"unknown phase {phase!r}")
-        self._checkpoint_step(step_id, phase, package_id, payload)
+        self._checkpoint_step(step_id, phase, package_id, payload, attempts=attempts)
 
     def report(self) -> MissionReport:
         """Assemble the frozen consolidated report from accumulated state."""
@@ -216,6 +257,8 @@ class _RunState:
             plans=tuple(self._plans),
             executions=tuple(self._executions),
             debriefs=tuple(self._debriefs),
+            retries=tuple(self._retries),
+            stage_plan=self._stage_plan,
         )
         if self._step_dir is not None:
             (self._step_dir / REPORT_FILENAME).write_text(json.dumps(report.as_dict(), indent=2, sort_keys=True) + "\n")
@@ -228,15 +271,24 @@ class _RunState:
             return False
         return (self._step_dir / _step_filename(step_id)).exists()
 
-    def _checkpoint_step(self, step_id: str, phase: str, package_id: str, payload: object) -> None:
+    def _checkpoint_step(
+        self,
+        step_id: str,
+        phase: str,
+        package_id: str,
+        payload: object,
+        attempts: int = 1,
+    ) -> None:
         if self._step_dir is None:
             return
-        record = {
+        record: dict[str, object] = {
             "step": step_id,
             "phase": phase,
             "package": package_id,
             "payload": _payload_as_dict(payload),
         }
+        if phase == "execute":
+            record["attempts"] = attempts
         (self._step_dir / _step_filename(step_id)).write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
         self._manifest.add(step_id)
         (self._step_dir / MANIFEST_FILENAME).write_text(
@@ -259,6 +311,16 @@ class _RunState:
         elif phase == "execute":
             items = cast("list[dict[str, object]]", payload)
             self._executions.extend(_execution_from_dict(item) for item in items)
+            attempts = cast(int, record.get("attempts", 1))
+            if attempts > 1:
+                self._retries.append(
+                    RetryRecord(
+                        package_id=package_id,
+                        phase="execute",
+                        attempts=attempts,
+                        succeeded=all(str(item.get("outcome", "")) == "success" for item in items),
+                    )
+                )
         elif phase == "debrief":
             self._debriefs.append(_debrief_from_dict(cast("dict[str, object]", payload)))
 

@@ -1,13 +1,17 @@
-"""Thin command-line interface: run canned missions, list missions.
+"""Thin command-line interface: run missions, plan missions, list missions.
 
 Commands
 --------
 ``list``
     Print the canned mission registry (name + package chain).
-``run <mission> [--checkpoint-dir DIR] [--output-dir DIR]``
+``run <mission> [--checkpoint-dir DIR] [--output-dir DIR] [--retry-max-attempts N]``
     Execute the mission end-to-end over the reference providers, persist the
     consolidated report + provenance, and print the consolidated debrief.
     Exit code 0 when every debrief verdict is ``"pass"``, 1 otherwise.
+``plan <mission>``
+    Print the parallel-stage plan (wavefront decomposition) for the mission:
+    which packages may run concurrently per stage, plus the achievable
+    parallelism and critical path length.
 """
 
 from __future__ import annotations
@@ -16,9 +20,11 @@ import argparse
 from pathlib import Path
 
 from .missions import MISSIONS, MISSION_NAMES, UnknownMissionError, get_mission
+from .planning import build_stage_plan
 from .protocol import MissionProvider
 from .provenance import write_mission_report, write_outcome_records
 from .providers import get_provider
+from .retry import RetryPolicy
 from .runner import MissionReport, MissionRunner
 
 DEFAULT_REPORT_FILENAME = "mission_report.json"
@@ -34,7 +40,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="bond-orchestrator",
         description="BOND-ORCHESTRATOR (DAG 00): run multi-package film missions "
-        "over the MissionProvider protocol with checkpoint/resume and provenance.",
+        "over the MissionProvider protocol with checkpoint/resume, retries, "
+        "parallel-stage planning, and provenance.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -50,6 +57,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="where to write mission_report.json + provenance/ (default: <root>/output/data)",
     )
+    run_parser.add_argument(
+        "--retry-max-attempts",
+        type=int,
+        default=1,
+        help="max execute attempts per package when a step fails (default: 1 = no retry)",
+    )
+
+    plan_parser = subparsers.add_parser("plan", help="show the parallel-stage plan for a mission")
+    plan_parser.add_argument("mission", help=f"mission name; one of {', '.join(MISSION_NAMES)}")
 
     subparsers.add_parser("list", help="list canned missions")
     return parser
@@ -67,7 +83,8 @@ def run_mission_command(args: argparse.Namespace) -> int:
         package_id: get_provider(package_id) for package_id in mission.package_ids()
     }
     checkpoint_dir = Path(args.checkpoint_dir) if args.checkpoint_dir else None
-    runner = MissionRunner(providers, checkpoint_dir=checkpoint_dir)
+    retry_policy = RetryPolicy(max_attempts=args.retry_max_attempts) if args.retry_max_attempts > 1 else None
+    runner = MissionRunner(providers, checkpoint_dir=checkpoint_dir, retry_policy=retry_policy)
     report: MissionReport = runner.run(mission)
 
     print(report.consolidated_debrief())
@@ -76,6 +93,13 @@ def run_mission_command(args: argparse.Namespace) -> int:
     write_mission_report(report, output_dir / DEFAULT_REPORT_FILENAME)
     write_outcome_records(report, output_dir / "provenance")
     return exit_code_for(report)
+
+
+def plan_mission_command(args: argparse.Namespace) -> int:
+    """Print the mission's parallel-stage plan and return 0."""
+    mission = get_mission(args.mission)
+    print(build_stage_plan(mission).render())
+    return 0
 
 
 def list_missions_command(args: argparse.Namespace) -> int:
@@ -91,9 +115,11 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entry point (also used by scripts/run_mission.py)."""
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.command == "run":
+    if args.command in ("run", "plan"):
         try:
-            return run_mission_command(args)
+            if args.command == "run":
+                return run_mission_command(args)
+            return plan_mission_command(args)
         except UnknownMissionError as exc:
             parser.error(str(exc))
     if args.command == "list":

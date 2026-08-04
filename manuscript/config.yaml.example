@@ -88,3 +88,5 @@ mission:
   name: "OPERATION_OMNIBUS"
   packages: [goldfinger, goldeneye, no_time_to_die]
   phases: [brief, recon, plan, execute, debrief]
+  retry:
+    max_attempts: 1

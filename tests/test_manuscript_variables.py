@@ -25,6 +25,8 @@ mission:
   name: "OPERATION_OMNIBUS"
   packages: [goldfinger, goldeneye, no_time_to_die]
   phases: [brief, recon, plan, execute, debrief]
+  retry:
+    max_attempts: 1
 """
 
 TOKEN_PATTERN = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
@@ -82,6 +84,56 @@ class TestWithReport:
         assert variables["RESULT_EXECUTION_ORDER"] == ("goldfinger → goldeneye → no_time_to_die")
         assert variables["RESULT_NUM_STEPS"] == "6"
         assert variables["RESULT_ALL_VERDICTS_PASS"] == "PASS"
+
+    def test_stage_and_retry_tokens_resolved(self, tmp_path) -> None:
+        project = _make_project(tmp_path)
+        report_dir = project / "output" / "data"
+        report_dir.mkdir(parents=True)
+        (report_dir / "mission_report.json").write_text(
+            json.dumps(
+                {
+                    "order": ["goldfinger", "goldeneye", "no_time_to_die"],
+                    "executions": [{"action": "a"}] * 6,
+                    "debriefs": [{"verdict": "pass"}] * 3,
+                    "retries": [{"package_id": "goldfinger", "phase": "execute", "attempts": 3}],
+                    "stage_plan": {
+                        "mission_name": "OPERATION_OMNIBUS",
+                        "stages": [
+                            {"index": 1, "packages": ["goldfinger"]},
+                            {"index": 2, "packages": ["goldeneye"]},
+                            {"index": 3, "packages": ["no_time_to_die"]},
+                        ],
+                        "max_parallelism": 1,
+                        "critical_path_length": 3,
+                    },
+                }
+            )
+        )
+        variables = generate_variables(project)
+        assert variables["RESULT_NUM_STAGES"] == "3"
+        assert variables["RESULT_MAX_PARALLELISM"] == "1"
+        assert variables["RESULT_CRITICAL_PATH_LENGTH"] == "3"
+        assert variables["RESULT_STAGE_PLAN"] == "1: goldfinger | 2: goldeneye | 3: no_time_to_die"
+        assert variables["RESULT_RETRY_COUNT"] == "1"
+
+    def test_config_retry_token(self, tmp_path) -> None:
+        project = _make_project(tmp_path)
+        (project / "manuscript" / "config.yaml").write_text(
+            MINIMAL_CONFIG.replace(
+                "retry:\n    max_attempts: 1",
+                "retry:\n    max_attempts: 3",
+            )
+        )
+        variables = generate_variables(project, require_outputs=False)
+        assert variables["CONFIG_RETRY_MAX_ATTEMPTS"] == "3"
+
+    def test_stage_tokens_fallback_to_na_without_report(self, tmp_path) -> None:
+        variables = generate_variables(_make_project(tmp_path), require_outputs=False)
+        assert variables["RESULT_NUM_STAGES"] == "N/A"
+        assert variables["RESULT_MAX_PARALLELISM"] == "N/A"
+        assert variables["RESULT_CRITICAL_PATH_LENGTH"] == "N/A"
+        assert variables["RESULT_STAGE_PLAN"] == "N/A"
+        assert variables["RESULT_RETRY_COUNT"] == "N/A"
 
     def test_failing_verdict_reports_fail(self, tmp_path) -> None:
         project = _make_project(tmp_path)

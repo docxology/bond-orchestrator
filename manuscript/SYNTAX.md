@@ -51,9 +51,15 @@ uses `"N/A"` fallbacks for `RESULT_*` tokens.
 | `CONFIG_NUM_PACKAGES` | Package count | `config.yaml` → `mission.packages` |
 | `CONFIG_PACKAGE_CHAIN` | Package chain (→) | `config.yaml` → `mission.packages` |
 | `CONFIG_PHASES` | Lifecycle phases | `src/bond_orchestrator/runner.py::PHASES` |
+| `CONFIG_RETRY_MAX_ATTEMPTS` | Configured retry policy | `config.yaml` → `mission.retry.max_attempts` |
 | `RESULT_EXECUTION_ORDER` | Measured order (→) | `output/data/mission_report.json` → `order` |
 | `RESULT_NUM_STEPS` | Executed plan steps | `output/data/mission_report.json` → `executions` |
 | `RESULT_ALL_VERDICTS_PASS` | PASS/FAIL | `output/data/mission_report.json` → `debriefs` |
+| `RESULT_RETRY_COUNT` | Retried steps | `output/data/mission_report.json` → `retries` |
+| `RESULT_NUM_STAGES` | Parallel stages | `.../mission_report.json` → `stage_plan` |
+| `RESULT_MAX_PARALLELISM` | Widest stage | `.../mission_report.json` → `stage_plan` |
+| `RESULT_CRITICAL_PATH_LENGTH` | Stage count | `.../mission_report.json` → `stage_plan` |
+| `RESULT_STAGE_PLAN` | Stage plan (index: pkgs...) | `.../mission_report.json` → `stage_plan` |
 
 The live cross-reference test
 (`tests/test_manuscript_variables.py::test_all_manuscript_tokens_are_generated`)

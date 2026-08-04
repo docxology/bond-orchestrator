@@ -19,7 +19,18 @@ class GraphError(ValueError):
 
 
 class CycleError(GraphError):
-    """Raised when package dependencies contain a cycle."""
+    """Raised when package dependencies contain a cycle.
+
+    Attributes:
+        cycle: The ordered cycle path (e.g. ``("goldfinger", "goldeneye",
+            "goldfinger")``) — the package sequence that closes the cycle,
+            ending where it began.  Empty when the error was constructed
+            without a path (backward-compatible).
+    """
+
+    def __init__(self, message: str, cycle: tuple[str, ...] = ()) -> None:
+        super().__init__(message)
+        self.cycle = cycle
 
 
 class UnknownNodeError(GraphError):
@@ -46,6 +57,45 @@ class FilmGraph:
         """Direct downstream packages that consume ``node``'s outputs."""
         return tuple(b for a, b in self.edges if a == node)
 
+    def find_cycle(self) -> tuple[str, ...]:
+        """Return one dependency cycle as an ordered path, or ``()``.
+
+        Depth-first search with a gray/black coloring over sorted node ids
+        (and sorted adjacency), so the returned path is canonical for a given
+        graph.  The path is a closed walk, e.g. ``("a", "b", "c", "a")`` for
+        edges a→b→c→a.
+        """
+        white, gray, black = 0, 1, 2
+        color = {node: white for node in self.nodes}
+        parent: dict[str, str | None] = {node: None for node in self.nodes}
+
+        def visit(node: str) -> tuple[str, ...] | None:
+            color[node] = gray
+            for downstream in sorted(self.dependents(node)):
+                if color[downstream] == gray:
+                    # back edge node -> downstream closes a cycle
+                    cycle: list[str] = [downstream]
+                    current: str | None = node
+                    while current is not None and current != downstream:
+                        cycle.append(current)
+                        current = parent[current]
+                    cycle.append(downstream)
+                    return tuple(reversed(cycle))
+                if color[downstream] == white:
+                    parent[downstream] = node
+                    found = visit(downstream)
+                    if found is not None:
+                        return found
+            color[node] = black
+            return None
+
+        for node in sorted(self.nodes):
+            if color[node] == white:
+                found = visit(node)
+                if found is not None:
+                    return found
+        return ()
+
     def topological_order(self) -> tuple[str, ...]:
         """Deterministic topological order (Kahn's algorithm, id tie-break).
 
@@ -70,8 +120,11 @@ class FilmGraph:
                     ready.sort()
 
         if len(order) != len(self.nodes):
-            cyclic = sorted(set(self.nodes) - set(order))
-            raise CycleError(f"cycle detected among packages: {cyclic}")
+            cycle = self.find_cycle()
+            raise CycleError(
+                f"dependency cycle detected: {' → '.join(cycle)}",
+                cycle=cycle,
+            )
         return tuple(order)
 
     def as_dict(self) -> dict[str, object]:

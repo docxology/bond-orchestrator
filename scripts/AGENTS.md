@@ -12,7 +12,7 @@ semantics (order, phases, checkpoint decisions, verdicts), it belongs in
 
 | Script | Wraps | Purpose |
 |---|---|---|
-| `run_mission.py` | `bond_orchestrator.cli.main` | `list` missions; `run <mission> [--checkpoint-dir DIR] [--output-dir DIR]`; persists report + provenance; prints consolidated debrief |
+| `run_mission.py` | `bond_orchestrator.cli.main` | `list` missions; `plan <mission>` stage plan; `run <mission> [--checkpoint-dir DIR] [--output-dir DIR] [--retry-max-attempts N]`; persists report + provenance; prints consolidated debrief |
 | `generate_manuscript_variables.py` | `bond_orchestrator.manuscript_variables.generate_variables` | Hydrates `{{TOKEN}}` map to `output/data/manuscript_variables.json` (strict; `--allow-draft` for N/A fallbacks) |
 | `__init__.py` | — | Package marker |
 
@@ -21,16 +21,18 @@ semantics (order, phases, checkpoint decisions, verdicts), it belongs in
 ```bash
 # From the package directory
 uv run python scripts/run_mission.py list
+uv run python scripts/run_mission.py plan OPERATION_OMNIBUS
 uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
+uv run python scripts/run_mission.py OPERATION_OMNIBUS --retry-max-attempts 3
 uv run python scripts/run_mission.py run OPERATION_OMNIBUS   # explicit subcommand
 uv run python scripts/generate_manuscript_variables.py
 uv run python scripts/generate_manuscript_variables.py --allow-draft
 ```
 
 `run_mission.py` defaults the subcommand to `run` when the first argument is
-not a known command (`run`/`list`), so `run_mission.py OPERATION_OMNIBUS` is
-equivalent to `run_mission.py run OPERATION_OMNIBUS` (see
-`_with_default_command`).
+not a known command (`run`/`list`/`plan`), so
+`run_mission.py OPERATION_OMNIBUS` is equivalent to
+`run_mission.py run OPERATION_OMNIBUS` (see `_with_default_command`).
 
 ## Conventions
 

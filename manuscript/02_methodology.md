@@ -20,6 +20,15 @@ set of packages regardless of declaration order [@kahn1962topological;
 {{CONFIG_MISSION_NAME}}, declares {{CONFIG_NUM_PACKAGES}} packages and is
 therefore executed in exactly one valid topological order.
 
+**Cycle detection.** A mission whose dependencies close a loop is rejected
+before any provider runs: `FilmGraph.find_cycle()` (`src/bond_orchestrator/graph.py`)
+runs a depth-first search over sorted node ids and returns the *ordered cycle
+path* (e.g. `("goldeneye", "goldfinger", "goldeneye")`); the raised
+`CycleError` carries that path, so a miswired mission names its own loop
+(goldfinger ↔ goldeneye) instead of a bare "cycle detected" message. The same
+validation gates the stage planner (§2.5) and therefore the `plan` CLI
+command.
+
 ## 2.2 The five-phase lifecycle
 
 Every provider implements the `MissionProvider` protocol
@@ -32,7 +41,8 @@ semantics), and `plan`/`execute`/`debrief` see the full recon picture.
 
 Execution is sequential and deterministic; the topological order is exactly
 what makes a later parallel implementation safe, because every dependency's
-outputs are guaranteed present before a consumer runs.
+outputs are guaranteed present before a consumer runs (§2.5 makes that
+parallelism explicit without changing the sequential contract).
 
 ## 2.3 Checkpoint / resume
 
@@ -41,12 +51,41 @@ is persisted as `<checkpoint_dir>/<mission>/<phase>_<package>.json` with a
 `manifest.json` tracking completed steps in order. Re-running the same mission
 with the same checkpoint dir replays completed steps (recon reports are
 restored into the context so downstream steps see identical inputs) and
-resumes from the last completed step. This follows the standard
-checkpoint/rollback-recovery pattern for long-running distributed work
-[@elnozahy2002survey], specialised here for deterministic single-node
-execution.
+resumes from the last completed step. Execute steps additionally persist
+their attempt count, so a retried step (§2.4) resumes with an identical retry
+record. This follows the standard checkpoint/rollback-recovery pattern for
+long-running distributed work [@elnozahy2002survey; @chandy1985distributed],
+specialised here for deterministic single-node execution.
 
-## 2.4 Provenance
+## 2.4 Retry policy
+
+A `RetryPolicy` (`src/bond_orchestrator/retry.py`) bounds how many attempts a
+failing `execute` step is given (default **{{CONFIG_RETRY_MAX_ATTEMPTS}}**
+attempt in configuration; the CLI raises it via `--retry-max-attempts N`).
+When any execution result carries a retryable outcome (`"failure"` by
+default), the step is re-executed — immediately and deterministically, with
+**no wall-clock backoff**, because a sleep would break the byte-determinism of
+reports, checkpoint files, and provenance records. After `max_attempts` the
+final outcome stands. Every step that needed more than one attempt records a
+`RetryRecord` (package, phase, attempts, succeeded) in the mission report and
+in its checkpoint record; retries are thus observable, resumable, and
+manuscript-token-able, while the consolidated debrief only annotates them when
+they occurred.
+
+## 2.5 Parallel-stage planning
+
+`src/bond_orchestrator/planning.py` decomposes the film DAG into **parallel
+stages** — the classic wavefront scheduling of directed task graphs
+[@kwok1999static]. Stage 1 holds every package with no dependencies; stage
+`k` holds every package whose dependencies all sit in stages `< k`; within a
+stage, package ids are sorted, so the plan is canonical. The `StagePlan`
+reports the achievable parallelism (widest stage) and the critical path
+length (number of stages), and the `plan` CLI command renders it. Execution
+itself remains sequential — the stages are the *planning artifact* that makes
+a future parallel executor provably safe, since every package in a stage may
+run concurrently without violating dependency order.
+
+## 2.6 Provenance
 
 For every outcome — each executed plan step and each debrief — the runner
 emits a `ProvenanceRecord` (`src/bond_orchestrator/provenance.py`) carrying a

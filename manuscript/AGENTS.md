@@ -16,10 +16,10 @@ token protocol, and the section modification workflow.
 |---|---|---|
 | `00_abstract.md` | Abstract: identity, mission, measured outcome | `CONFIG_IDENTITY`, `CONFIG_CODENAME`, `CONFIG_MISSION_NAME`, `CONFIG_PACKAGE_CHAIN`, `RESULT_EXECUTION_ORDER`, `RESULT_ALL_VERDICTS_PASS` |
 | `01_introduction.md` | BOND suite context, guarantees, reader's guide | None |
-| `02_methodology.md` | DAG model, topological order, five-phase lifecycle, checkpoint/resume, provenance | `CONFIG_MISSION_NAME`, `CONFIG_NUM_PACKAGES`, `CONFIG_PHASES` |
-| `03_results.md` | OPERATION OMNIBUS execution results | `CONFIG_MISSION_NAME`, `RESULT_EXECUTION_ORDER`, `RESULT_NUM_STEPS`, `RESULT_ALL_VERDICTS_PASS` |
+| `02_methodology.md` | DAG model, cycle-path detection, five-phase lifecycle, checkpoint/resume, retry policy, parallel-stage planning, provenance | `CONFIG_MISSION_NAME`, `CONFIG_NUM_PACKAGES`, `CONFIG_PHASES`, `CONFIG_RETRY_MAX_ATTEMPTS` |
+| `03_results.md` | OPERATION OMNIBUS execution, stage plan, retry outcome | `CONFIG_MISSION_NAME`, `CONFIG_RETRY_MAX_ATTEMPTS`, `RESULT_EXECUTION_ORDER`, `RESULT_NUM_STEPS`, `RESULT_ALL_VERDICTS_PASS`, `RESULT_RETRY_COUNT`, `RESULT_NUM_STAGES`, `RESULT_MAX_PARALLELISM`, `RESULT_CRITICAL_PATH_LENGTH`, `RESULT_STAGE_PLAN` |
 | `04_conclusion.md` | Summary of the Layer 3 contract | None |
-| `05_experimental_setup.md` | Identity/config parameters, mission table, software environment | `CONFIG_TITLE`, `CONFIG_SUBTITLE`, `CONFIG_VERSION`, `CONFIG_IDENTITY`, `CONFIG_CODENAME`, `CONFIG_FIRST_AUTHOR`, `CONFIG_MISSION_NAME`, `CONFIG_NUM_PACKAGES`, `CONFIG_PACKAGE_CHAIN`, `CONFIG_PHASES` |
+| `05_experimental_setup.md` | Identity/config parameters, mission table, software environment | `CONFIG_TITLE`, `CONFIG_SUBTITLE`, `CONFIG_VERSION`, `CONFIG_IDENTITY`, `CONFIG_CODENAME`, `CONFIG_FIRST_AUTHOR`, `CONFIG_MISSION_NAME`, `CONFIG_NUM_PACKAGES`, `CONFIG_PACKAGE_CHAIN`, `CONFIG_PHASES`, `CONFIG_RETRY_MAX_ATTEMPTS` |
 | `06_reproducibility.md` | Determinism policy, verification commands, artifact inventory | `CONFIG_MISSION_NAME`, `CONFIG_VERSION`, `CONFIG_FIRST_AUTHOR`, `RESULT_ALL_VERDICTS_PASS` |
 | `07_scope_and_related_work.md` | Scope limits, related literature, integration points | None |
 | `99_references.md` | Bibliography | None |

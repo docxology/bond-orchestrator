@@ -39,6 +39,13 @@ class TestRunMissionScript:
         assert result.returncode == 2
         assert "OPERATION_GHOST" in result.stderr
 
+    def test_plan_command(self, project_root: Path) -> None:
+        result = _run_script(project_root, "plan", "OPERATION_OMNIBUS")
+        assert result.returncode == 0
+        assert "OPERATION_OMNIBUS stage plan" in result.stdout
+        assert "stage 3: no_time_to_die" in result.stdout
+        assert "max parallelism: 1 | critical path: 3 stages" in result.stdout
+
 
 class TestGenerateManuscriptVariablesScript:
     def test_draft_mode_writes_token_map(self, project_root: Path) -> None:

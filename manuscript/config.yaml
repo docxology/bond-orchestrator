@@ -90,3 +90,7 @@ mission:
   name: "OPERATION_OMNIBUS"
   packages: [goldfinger, goldeneye, no_time_to_die]
   phases: [brief, recon, plan, execute, debrief]
+  # Default retry policy documented for the manuscript; the CLI overrides via
+  # --retry-max-attempts (1 = no retry, immediate deterministic re-attempts).
+  retry:
+    max_attempts: 1

@@ -44,7 +44,9 @@ missions/providers, strict-mode manuscript variables, and runner errors.
 
 ## Rules
 
-- No `unittest.mock` / `MagicMock` / `@patch` / `create_autospec` — ever.
+- No mock framework of any kind — no patch-based stand-ins, no auto-spec
+  fakes, no fake-object builders — ever. Deterministic providers implement
+  the real protocol.
 - No RNG, no wall-clock assertions; determinism is asserted by byte-equality
   (`as_dict()` comparison) across runs.
 - Prefer `tmp_path` real state/output dirs over in-memory stand-ins.

@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from bond_orchestrator.cli import main  # noqa: E402
 
-COMMANDS = ("run", "list")
+COMMANDS = ("run", "list", "plan")
 
 
 def _with_default_command(argv: list[str]) -> list[str]:

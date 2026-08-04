@@ -8,8 +8,9 @@ over the `MissionProvider` protocol:
 brief() all → recon() (sequential + deterministic) → plan() → execute() → debrief() → consolidated report
 ```
 
-with checkpoint/resume (intermediate reports persisted to a state dir) and
-provenance (mission_io-equivalent) written for every outcome.
+with checkpoint/resume (intermediate reports persisted to a state dir),
+deterministic retry policy, parallel-stage planning, and provenance
+(mission_io-equivalent) written for every outcome.
 
 ## What it does
 
@@ -20,20 +21,29 @@ one film's recon outputs feed another film's recon
 lifecycle phases in deterministic topological order, sharing one
 `MissionContext` so downstream packages consume upstream recon outputs. The
 result is a single consolidated debrief per mission, plus per-outcome
-provenance records.
+provenance records. Real film packages built to the frozen `bond-api`
+protocol are bound through the adapter in `src/bond_orchestrator/film_providers.py`.
 
-Three guarantees are enforced by construction:
+Five guarantees are enforced by construction:
 
 - **Order** — canonical topological order (Kahn's algorithm, id tie-break);
   execution order never depends on declaration order.
+- **Cycle detection** — a cyclic dependency graph is rejected with the exact
+  ordered cycle path (`FilmGraph.find_cycle()`), before any provider runs.
 - **Resumability** — every completed `(phase, package)` step persists to a
   checkpoint dir; re-running resumes from the last completed step and
-  replays the rest.
+  replays the rest (including retry attempt counts).
+- **Retry policy** — a bounded, deterministic retry policy re-executes a
+  failing `execute` step (immediate re-attempts, no wall-clock backoff) and
+  records a `RetryRecord` per retried step.
+- **Parallel-stage planning** — `src/bond_orchestrator/planning.py` computes
+  the wavefront stages (what may run concurrently), achievable parallelism,
+  and critical path length, rendered by the `plan` CLI command.
 - **Provenance** — one `ProvenanceRecord` per executed plan step and per
   debrief, with a deterministic run id (`outcomes.json` + `provenance.csv`).
 
-The execution core is pure logic with zero infrastructure imports; the whole
-package runs standalone with only `pyyaml` as a runtime dependency.
+The execution core is pure logic with zero infrastructure imports; `bond-api`
+is imported lazily only when real films are bound.
 
 ## Quick start
 
@@ -44,8 +54,14 @@ uv run pytest tests/ --cov=src --cov-fail-under=90
 # List canned missions
 uv run python scripts/run_mission.py list
 
+# Show a mission's parallel-stage plan
+uv run python scripts/run_mission.py plan OPERATION_OMNIBUS
+
 # Run the flagship mission end-to-end (with checkpoint/resume state dir)
 uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
+
+# Run with a retry policy (max 3 execute attempts per failing step)
+uv run python scripts/run_mission.py OPERATION_OMNIBUS --retry-max-attempts 3
 
 # Hydrate manuscript tokens from config.yaml + the mission report (strict)
 uv run python scripts/generate_manuscript_variables.py
@@ -74,21 +90,27 @@ output/state/<mission>/                    # checkpoint step files + manifest
 ```
 src/bond_orchestrator/
 ├── protocol.py            # MissionProvider protocol + mission data model (pure)
-├── graph.py               # film DAG construction + deterministic topo sort (pure)
-├── runner.py              # phase-major executor + checkpoint/resume (pure core)
+├── graph.py               # film DAG + topo sort + ordered cycle-path detection (pure)
+├── planning.py            # parallel-stage plans: parallelism + critical path (pure)
+├── retry.py               # deterministic retry policy + RetryRecord (pure)
+├── runner.py              # phase-major executor + checkpoint/resume + retries (pure)
 ├── missions.py            # canned missions: OMNIBUS / DIAMOND / SINGLET (pure)
 ├── providers.py           # deterministic reference providers (real protocol impls)
+├── film_providers.py      # adapter binding REAL bond-api film packages (lazy import)
 ├── provenance.py          # mission_io-equivalent outcome records (pure)
 ├── manuscript_variables.py# {{TOKEN}} hydration from config.yaml + mission report
-└── cli.py                 # thin CLI: `run <mission> [--checkpoint-dir]`, `list`
+└── cli.py                 # thin CLI: `run`, `plan`, `list`
 scripts/
 ├── run_mission.py         # thin wrapper → bond_orchestrator.cli.main
 └── generate_manuscript_variables.py  # thin wrapper → generate_variables
 ```
 
-Layer contract: `src/bond_orchestrator/` never imports `infrastructure.*`
-(standalone-clean); `scripts/` are thin wrappers; tests use real deterministic
-providers implementing the real protocol — no mocks anywhere.
+Layer contract: the pure core (`protocol/graph/planning/retry/runner/missions/
+providers/provenance/manuscript_variables`) never imports `infrastructure.*` or
+`bond-api` (standalone-liftable); `bond-api` is imported lazily inside
+`film_providers.py` only when real films are bound; `scripts/` are thin
+wrappers; tests use real deterministic providers implementing the real
+protocol — no mocks anywhere.
 
 ## Protocol contract
 

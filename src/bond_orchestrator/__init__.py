@@ -37,6 +37,7 @@ from .missions import (
     UnknownMissionError,
     get_mission,
 )
+from .planning import Stage, StagePlan, build_stage_plan, plan_stages
 from .protocol import (
     BriefRecord,
     Debrief,
@@ -65,6 +66,7 @@ from .film_providers import (
     load_film_providers,
     load_mission_providers,
 )
+from .retry import DEFAULT_RETRY_OUTCOMES, RetryPolicy, RetryRecord, should_retry
 from .runner import (
     PHASES,
     MissionError,
@@ -82,6 +84,7 @@ __all__ = [
     "BriefRecord",
     "CODENAME",
     "CycleError",
+    "DEFAULT_RETRY_OUTCOMES",
     "Debrief",
     "DeterministicProvider",
     "ExecutionResult",
@@ -110,13 +113,20 @@ __all__ = [
     "ProviderNotFoundError",
     "REFERENCE_PROVIDERS",
     "ReconReport",
+    "RetryPolicy",
+    "RetryRecord",
+    "Stage",
+    "StagePlan",
     "UnknownMissionError",
     "UnknownNodeError",
     "__version__",
     "build_film_graph",
+    "build_stage_plan",
     "derive_run_id",
     "get_mission",
     "get_provider",
+    "plan_stages",
+    "should_retry",
     "write_mission_report",
     "write_outcome_records",
     "FilmProviderAdapter",

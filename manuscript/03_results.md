@@ -34,3 +34,23 @@ The run emitted one provenance record per executed step and per debrief
 (`output/data/provenance/outcomes.json` + `provenance.csv`), every record
 carrying the deterministic run id, package, provider, phase, outcome, and
 numeric metrics.
+
+## 3.4 Stage plan and retry outcome
+
+{{CONFIG_MISSION_NAME}}'s wavefront decomposition (see §2.5) resolved into
+**{{RESULT_NUM_STAGES}}** parallel stages with an achievable parallelism of
+**{{RESULT_MAX_PARALLELISM}}** and a critical path of
+**{{RESULT_CRITICAL_PATH_LENGTH}}** stages:
+
+```
+{{RESULT_STAGE_PLAN}}
+```
+
+Because the chain is serial, every stage is single-package: no concurrency is
+available, and the critical path equals the package count — exactly the shape
+a serial chain must have.
+
+The run's retry ledger recorded **{{RESULT_RETRY_COUNT}}** retried steps. With
+the configured policy (max {{CONFIG_RETRY_MAX_ATTEMPTS}} attempt), no step
+needed a re-execution; retry records exist only when a transient failure was
+actually retried (§2.4).

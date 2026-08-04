@@ -69,6 +69,58 @@ class TestRunCommand:
         assert "OPERATION_GHOST" in capsys.readouterr().err
 
 
+class TestPlanCommand:
+    def test_plan_omnibus_shows_serial_stages(self, capsys) -> None:
+        assert cli.main(["plan", "OPERATION_OMNIBUS"]) == 0
+        out = capsys.readouterr().out
+        assert "OPERATION_OMNIBUS stage plan" in out
+        assert "stage 1: goldfinger" in out
+        assert "stage 2: goldeneye" in out
+        assert "stage 3: no_time_to_die" in out
+        assert "max parallelism: 1 | critical path: 3 stages" in out
+
+    def test_plan_diamond_shows_parallel_stage(self, capsys) -> None:
+        assert cli.main(["plan", "OPERATION_DIAMOND"]) == 0
+        out = capsys.readouterr().out
+        assert "stage 1: from_russia_with_love | thunderball" in out
+        assert "max parallelism: 2 | critical path: 2 stages" in out
+
+    def test_plan_unknown_mission_exits_two(self, capsys) -> None:
+        with pytest.raises(SystemExit) as excinfo:
+            cli.main(["plan", "OPERATION_GHOST"])
+        assert excinfo.value.code == 2
+        assert "OPERATION_GHOST" in capsys.readouterr().err
+
+
+class TestRunCommandRetryFlag:
+    def test_run_with_retry_flag_reports_stage_plan_and_no_retries(self, tmp_path) -> None:
+        output_dir = tmp_path / "out"
+        assert (
+            cli.main(
+                [
+                    "run",
+                    "OPERATION_SINGLET",
+                    "--retry-max-attempts",
+                    "3",
+                    "--output-dir",
+                    str(output_dir),
+                ]
+            )
+            == 0
+        )
+        report = json.loads((output_dir / "mission_report.json").read_text())
+        assert report["retries"] == []
+        assert report["stage_plan"]["max_parallelism"] == 1
+        assert report["stage_plan"]["critical_path_length"] == 1
+
+    def test_run_default_has_no_retry_records(self, tmp_path) -> None:
+        output_dir = tmp_path / "out"
+        assert cli.main(["run", "OPERATION_SINGLET", "--output-dir", str(output_dir)]) == 0
+        report = json.loads((output_dir / "mission_report.json").read_text())
+        assert report["retries"] == []
+        assert report["stage_plan"]["stages"][0]["packages"] == ["goldfinger"]
+
+
 class TestExitCodeHelper:
     def test_exit_code_zero_when_all_pass(self) -> None:
         report = MissionRunner(_reference_providers()).run(OPERATION_OMNIBUS)

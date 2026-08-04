@@ -19,6 +19,7 @@ the manuscript-variable pipeline (`scripts/generate_manuscript_variables.py`
 | Package count | `{{CONFIG_NUM_PACKAGES}}` |
 | Package chain | `{{CONFIG_PACKAGE_CHAIN}}` |
 | Lifecycle phases | `{{CONFIG_PHASES}}` |
+| Retry max attempts (configured) | `{{CONFIG_RETRY_MAX_ATTEMPTS}}` |
 
 ## 5.3 Software environment
 

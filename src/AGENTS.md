@@ -15,13 +15,16 @@ bond-utilities integration points trivial.
 | Module | Responsibility |
 |---|---|
 | `protocol.py` | `MissionProvider` protocol + frozen mission data model (`Mission`, `MissionPackage`, `ReconReport`, `MissionContext`, `Plan`, `ExecutionResult`, `Debrief`) |
-| `graph.py` | `build_film_graph` + `FilmGraph` (validation, canonical topological order) |
-| `runner.py` | `MissionRunner`, `MissionReport`, `PHASES`, checkpoint/resume state layer |
+| `graph.py` | `build_film_graph` + `FilmGraph` (validation, canonical topological order, ordered cycle-path detection via `find_cycle`) |
+| `planning.py` | `plan_stages` + `StagePlan`/`Stage` (wavefront parallel-stage planning: parallelism + critical path) |
+| `retry.py` | `RetryPolicy`, `RetryRecord`, `should_retry` (deterministic bounded retry, no wall-clock backoff) |
+| `runner.py` | `MissionRunner`, `MissionReport`, `PHASES`, checkpoint/resume state layer, execute-phase retry, stage plan attachment |
 | `missions.py` | Registry: OPERATION OMNIBUS / DIAMOND / SINGLET, `get_mission` |
 | `providers.py` | `DeterministicProvider` base + reference film providers |
+| `film_providers.py` | `FilmProviderAdapter` binding real `bond-api` film providers (lazy import) |
 | `provenance.py` | mission_io-equivalent: `ProvenanceRecord`, `write_outcome_records`, `write_mission_report` |
 | `manuscript_variables.py` | `generate_variables()` — `{{TOKEN}}` map from config.yaml + mission report |
-| `cli.py` | argparse CLI: `run <mission> [--checkpoint-dir] [--output-dir]`, `list` |
+| `cli.py` | argparse CLI: `run <mission> [--checkpoint-dir] [--output-dir] [--retry-max-attempts]`, `plan <mission>`, `list` |
 | `__init__.py` | Public re-exports; identity BOND-ORCHESTRATOR / codename DAG 00 |
 
 ## Boundary rules

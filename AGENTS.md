@@ -31,14 +31,25 @@ per-outcome provenance records.
 
 - **Deterministic DAG execution** — canonical topological order (Kahn's
   algorithm, sorted ready-worklist); declaration-order independent.
+- **Ordered cycle-path detection** — `FilmGraph.find_cycle()` returns the
+  exact closed dependency path; `CycleError` names the loop.
 - **Checkpoint/resume** — every completed `(phase, package)` step persisted to
   `<checkpoint-dir>/<mission>/`; resume replays completed steps and continues
-  from the last completed step; `report.json` persisted at completion.
+  from the last completed step; execute steps persist their attempt count;
+  `report.json` persisted at completion.
+- **Deterministic retry policy** — bounded immediate re-attempts (no wall-clock
+  backoff) on failing `execute` steps; `RetryRecord`s reported and persisted.
+- **Parallel-stage planning** — wavefront `StagePlan` (achievable parallelism
+  + critical path), rendered by the `plan` CLI command and carried in reports.
 - **Provenance** — one `ProvenanceRecord` per executed step and per debrief
   (mission_io-equivalent; `outcomes.json` + `provenance.csv`, deterministic
   run id).
+- **Real-film binding** — `film_providers.py` adapts real `bond-api`
+  `MissionProvider` films to the orchestrator contract (lazy import keeps the
+  pure core standalone-liftable).
 - **Canned missions** — OPERATION OMNIBUS (chain), OPERATION DIAMOND
-  (diamond), OPERATION SINGLET; `run <mission> [--checkpoint-dir]`, `list`.
+  (diamond), OPERATION SINGLET; `run <mission> [--checkpoint-dir]`, `plan
+  <mission>`, `list`.
 - **Manuscript variable hydration** — identity/mission parameters from
   `manuscript/config.yaml` + measured results from
   `output/data/mission_report.json`; prose never hand-authors metrics.
@@ -50,9 +61,9 @@ per-outcome provenance records.
 ```mermaid
 flowchart TB
     P[projects/working/bond/bond-orchestrator]
-    P --> SRC[src/bond_orchestrator<br/>Pure core · protocol/graph/runner/missions/providers/provenance]
+    P --> SRC[src/bond_orchestrator<br/>Pure core · protocol/graph/planning/retry/runner/missions/providers/film_providers/provenance]
     P --> SC[scripts<br/>run_mission.py · generate_manuscript_variables.py]
-    P --> T[tests<br/>77 tests · no mocks · 98% coverage]
+    P --> T[tests<br/>131 tests · no mocks · 97.5% coverage]
     P --> DOCS[docs<br/>agent_instructions · architecture · protocol · testing_philosophy]
     P --> M[manuscript<br/>config.yaml · 00_abstract..99_references · SYNTAX.md]
     P --> OUT[output<br/>mission_report.json · provenance/ · state/ · manuscript_variables.json]

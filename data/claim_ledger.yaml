@@ -41,3 +41,17 @@ claims:
     source_tier: project_source
     freshness: active
     artifact_path: pyproject.toml
+  - claim_id: omnibus-stage-count
+    kind: number
+    value: 3
+    source: projects/working/bond/bond-orchestrator/src/bond_orchestrator/planning.py build_stage_plan canonical OMNIBUS stages
+    source_tier: project_source
+    freshness: active
+    artifact_path: src/bond_orchestrator/planning.py
+  - claim_id: retry-policy-default-attempts
+    kind: number
+    value: 1
+    source: projects/working/bond/bond-orchestrator/manuscript/config.yaml mission.retry.max_attempts
+    source_tier: project_source
+    freshness: active
+    artifact_path: manuscript/config.yaml

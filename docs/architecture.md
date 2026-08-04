@@ -29,6 +29,31 @@ nodes, acyclic) and produces a `FilmGraph`. Execution order is the
 ready-worklist, so the order is canonical for a given package set regardless
 of declaration order.
 
+**Cycle-path detection.** `FilmGraph.find_cycle()` runs a DFS over sorted ids
+and returns the ordered closed dependency path (e.g.
+`("goldeneye", "goldfinger", "goldeneye")`). A cyclic mission is rejected
+*before any provider runs*; the raised `CycleError` carries the path so the
+message names the loop.
+
+## Parallel-stage planning (`src/bond_orchestrator/planning.py`)
+
+`plan_stages(graph)` decomposes the DAG into wavefronts: stage 1 = packages
+with no dependencies; stage `k` = packages whose deps all sit in stages `< k`
+(packages sorted within a stage). `StagePlan` reports `max_parallelism()`
+(widest stage) and `critical_path_length()` (stage count), rendered by the
+`plan` CLI command and carried on every `MissionReport`. Planning does NOT
+change execution (sequential by design) — it is the artifact that makes a
+future parallel executor provably safe.
+
+## Deterministic retry policy (`src/bond_orchestrator/retry.py`)
+
+`RetryPolicy(max_attempts, retry_outcomes)` bounds how many times a failing
+`execute` step is re-run. Retries are immediate — **no wall-clock backoff**,
+so reports/checkpoints/provenance stay byte-deterministic. The runner
+re-executes until success or `max_attempts`; the attempt count is persisted in
+the checkpoint record, and steps needing >1 attempt record a `RetryRecord` in
+the report.
+
 ## The five-phase lifecycle
 
 `MissionRunner.run()` (`src/bond_orchestrator/runner.py`) executes
@@ -58,9 +83,11 @@ order plus `consolidated_debrief()` — the single debrief per mission.
 └── report.json                       # full MissionReport at completion
 ```
 
-Resume: steps present in the manifest are replayed from their step files
-(recon reports restored into the context), then execution continues from the
-last completed step. Delete the state dir to force a fresh run.
+Execute step files additionally carry `"attempts": N` so a retried step
+resumes with an identical `RetryRecord`. Resume: steps present in the manifest
+are replayed from their step files (recon reports restored into the context),
+then execution continues from the last completed step. Delete the state dir to
+force a fresh run.
 
 ## Provenance
 

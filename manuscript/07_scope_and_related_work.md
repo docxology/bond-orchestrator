@@ -4,17 +4,20 @@
 
 This package scopes to orchestration only:
 
-- **In scope**: DAG construction and validation, deterministic topological
-  execution, checkpoint/resume, provenance recording, canned mission
-  registry, thin CLI.
+- **In scope**: DAG construction and validation with ordered cycle-path
+  detection, deterministic topological execution, checkpoint/resume,
+  deterministic retry policy, parallel-stage planning, provenance recording,
+  canned mission registry, real-film binding, thin CLI.
 - **Out of scope**: film business logic (provider concern), mission *choice*
-  (coordinator concern), protocol ownership once `bond-api` lands (see
-  §7.3), shared mission I/O once `bond-utilities` lands (see `TODO.md`).
+  (coordinator concern), protocol ownership (now `bond-api`'s — see §7.3),
+  shared mission I/O once `bond-utilities.mission_io` is adopted (see
+  `TODO.md`).
 
 Parallel execution is deliberately deferred: the runner executes sequentially
-because determinism and resumability are the Phase 1 guarantees. The DAG order
-is what makes parallel execution safe in a later phase, since a consumer's
-dependencies are always scheduled before it.
+because determinism and resumability are the load-bearing guarantees. The
+stage planner (§2.5) makes the parallelism explicit without changing that
+contract — every package in a stage may run concurrently, and the sequential
+runner is the reference implementation of the same order.
 
 ## 7.2 Related work
 
@@ -22,16 +25,26 @@ Topological sorting of dependency graphs dates to Kahn's algorithm
 [@kahn1962topological] and is standard material in algorithms texts
 [@cormen2009introduction]. Long-running multi-stage workloads recover from
 interruption through checkpoint/rollback-recovery protocols, surveyed in
-[@elnozahy2002survey]; the runner's manifest + per-step state files follow
-that pattern specialised for deterministic single-node execution.
+[@elnozahy2002survey], with distributed snapshots for coordinated state
+capture [@chandy1985distributed]; the runner's manifest + per-step state files
+follow that pattern specialised for deterministic single-node execution.
+Scheduling directed task graphs onto parallel machines by level-by-level
+wavefront decomposition is a classic static-scheduling result
+[@kwok1999static]; the orchestrator's stage plan is its deterministic,
+single-machine specialization. Retrying transient step failures with bounded
+attempts is standard reliability practice; here it is made deterministic by
+removing wall-clock backoff entirely.
 
-## 7.3 Integration points (declared, not yet wired)
+## 7.3 Integration points
 
-- `bond-api` will own the canonical `MissionProvider` protocol; this package
-  already implements against it and will re-export instead of defining.
-- `bond-utilities` will ship `mission_io`; `provenance.py` is the drop-in
-  equivalent and will delegate to it.
-- Real film packages will ship their own providers; the reference providers in
-  `src/bond_orchestrator/providers.py` will yield to an entry-point registry.
+Wired (phases 2–3): real film packages built to the frozen `bond-api`
+`MissionProvider` protocol are bound through the adapter in
+`src/bond_orchestrator/film_providers.py` (`bond-api` is a local path
+dependency, imported lazily so the pure core stays liftable without it).
 
-Each integration point is tracked with acceptance criteria in `TODO.md`.
+Declared, not yet wired (each tracked with acceptance criteria in `TODO.md`):
+
+- `bond-utilities.mission_io` provenance delegation — `provenance.py` is the
+  drop-in equivalent and will delegate to it once it ships.
+- `bond-coordinator` mission-spec handoff — coordinator-produced missions (same
+  `Mission` shape) should execute unchanged.

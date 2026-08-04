@@ -220,5 +220,31 @@
       "package_id": "no_time_to_die",
       "provider": "no_time_to_die"
     }
-  ]
+  ],
+  "retries": [],
+  "stage_plan": {
+    "critical_path_length": 3,
+    "max_parallelism": 1,
+    "mission_name": "OPERATION_OMNIBUS",
+    "stages": [
+      {
+        "index": 1,
+        "packages": [
+          "goldfinger"
+        ]
+      },
+      {
+        "index": 2,
+        "packages": [
+          "goldeneye"
+        ]
+      },
+      {
+        "index": 3,
+        "packages": [
+          "no_time_to_die"
+        ]
+      }
+    ]
+  }
 }

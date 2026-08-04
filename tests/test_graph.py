@@ -92,3 +92,61 @@ class TestTopologicalOrder:
     def test_empty_graph(self) -> None:
         graph = FilmGraph(nodes=(), edges=())
         assert graph.topological_order() == ()
+
+
+class TestCycleDetection:
+    """Dependency-cycle detection returns an ordered, deterministic path."""
+
+    @staticmethod
+    def _two_cycle() -> FilmGraph:
+        return FilmGraph(nodes=("a", "b"), edges=(("a", "b"), ("b", "a")))
+
+    def test_find_cycle_on_two_node_cycle(self) -> None:
+        assert self._two_cycle().find_cycle() == ("a", "b", "a")
+
+    def test_find_cycle_on_three_node_cycle(self) -> None:
+        graph = FilmGraph(
+            nodes=("a", "b", "c"),
+            edges=(("a", "b"), ("b", "c"), ("c", "a")),
+        )
+        assert graph.find_cycle() == ("a", "b", "c", "a")
+
+    def test_find_cycle_returns_empty_for_acyclic(self) -> None:
+        graph = build_film_graph(OPERATION_OMNIBUS.packages)
+        assert graph.find_cycle() == ()
+
+    def test_cycle_error_carries_path(self) -> None:
+        packages = (
+            MissionPackage(id="a", title="A", objective="x", depends_on=("b",)),
+            MissionPackage(id="b", title="B", objective="x", depends_on=("c",)),
+            MissionPackage(id="c", title="C", objective="x", depends_on=("a",)),
+        )
+        with pytest.raises(CycleError) as excinfo:
+            build_film_graph(packages)
+        # depends_on=("b",) means edge b->a; the closed walk is a->c->b->a.
+        assert excinfo.value.cycle == ("a", "c", "b", "a")
+        assert "a → c → b → a" in str(excinfo.value)
+
+    def test_cycle_error_defaults_to_empty_path(self) -> None:
+        assert CycleError("plain").cycle == ()
+
+    def test_real_film_ids_cycle(self) -> None:
+        """A cycle built from real film package ids is detected with a path."""
+        packages = (
+            MissionPackage(
+                id="goldfinger",
+                title="GOLDFINGER",
+                objective="recon the gold market",
+                depends_on=("goldeneye",),
+            ),
+            MissionPackage(
+                id="goldeneye",
+                title="GOLDENEYE",
+                objective="assess EMP resilience",
+                depends_on=("goldfinger",),
+            ),
+        )
+        with pytest.raises(CycleError) as excinfo:
+            build_film_graph(packages)
+        assert excinfo.value.cycle == ("goldeneye", "goldfinger", "goldeneye")
+        assert "goldeneye → goldfinger → goldeneye" in str(excinfo.value)

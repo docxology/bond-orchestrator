@@ -46,6 +46,7 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
     authors = cast(list[dict[str, Any]], config.get("authors", []))
 
     packages = cast(list[str], mission.get("packages", []))
+    retry = cast(dict[str, Any], mission.get("retry", {}))
     variables: dict[str, str] = {
         "CONFIG_TITLE": str(paper.get("title", "")),
         "CONFIG_SUBTITLE": str(paper.get("subtitle", "")),
@@ -57,6 +58,7 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
         "CONFIG_NUM_PACKAGES": str(len(packages)),
         "CONFIG_PACKAGE_CHAIN": " → ".join(packages),
         "CONFIG_PHASES": ", ".join(PHASES),
+        "CONFIG_RETRY_MAX_ATTEMPTS": str(retry.get("max_attempts", 1)),
     }
 
     report_path = project_root / REPORT_RELATIVE_PATH
@@ -64,11 +66,14 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
         report = cast(dict[str, Any], json.loads(report_path.read_text()))
         debriefs = cast(list[dict[str, Any]], report.get("debriefs", []))
         all_pass = all(str(d.get("verdict", "")) == "pass" for d in debriefs)
+        stage_plan = cast(dict[str, Any] | None, report.get("stage_plan"))
         variables.update(
             {
                 "RESULT_EXECUTION_ORDER": " → ".join(cast(list[str], report.get("order", []))),
                 "RESULT_NUM_STEPS": str(len(cast(list[Any], report.get("executions", [])))),
                 "RESULT_ALL_VERDICTS_PASS": "PASS" if all_pass else "FAIL",
+                "RESULT_RETRY_COUNT": str(len(cast(list[Any], report.get("retries", [])))),
+                **(_stage_plan_tokens(stage_plan) if stage_plan else _stage_plan_tokens(None)),
             }
         )
     elif require_outputs:
@@ -83,6 +88,32 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
                 "RESULT_EXECUTION_ORDER": "N/A",
                 "RESULT_NUM_STEPS": "N/A",
                 "RESULT_ALL_VERDICTS_PASS": "N/A",
+                "RESULT_RETRY_COUNT": "N/A",
+                "RESULT_NUM_STAGES": "N/A",
+                "RESULT_MAX_PARALLELISM": "N/A",
+                "RESULT_CRITICAL_PATH_LENGTH": "N/A",
+                "RESULT_STAGE_PLAN": "N/A",
             }
         )
     return variables
+
+
+def _stage_plan_tokens(stage_plan: dict[str, Any] | None) -> dict[str, str]:
+    """RESULT_* tokens derived from the report's ``stage_plan`` block."""
+    if stage_plan is None:
+        return {
+            "RESULT_NUM_STAGES": "N/A",
+            "RESULT_MAX_PARALLELISM": "N/A",
+            "RESULT_CRITICAL_PATH_LENGTH": "N/A",
+            "RESULT_STAGE_PLAN": "N/A",
+        }
+    stages = cast(list[dict[str, Any]], stage_plan.get("stages", []))
+    rendered = " | ".join(
+        f"{stage['index']}: {','.join(cast(list[str], stage.get('packages', [])))}" for stage in stages
+    )
+    return {
+        "RESULT_NUM_STAGES": str(len(stages)),
+        "RESULT_MAX_PARALLELISM": str(stage_plan.get("max_parallelism", 0)),
+        "RESULT_CRITICAL_PATH_LENGTH": str(stage_plan.get("critical_path_length", 0)),
+        "RESULT_STAGE_PLAN": rendered,
+    }
