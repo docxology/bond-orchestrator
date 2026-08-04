@@ -102,12 +102,15 @@ uv run pytest tests/ --cov=src --cov-fail-under=90 --cov-report=term-missing
 
 Live test count + measured coverage: `docs/_generated/COUNTS.md`.
 
-## BOND-suite integration points (declared, not yet wired)
+## BOND-suite integration (wired in commit 728d8f3)
 
-| Dependency | When ready | What changes |
+| Dependency | Status | What changed |
 | --- | --- | --- |
-| `bond-api` | ships `MissionProvider` | `protocol.py` re-exports the canonical contract |
-| `bond-utilities` | ships `mission_io` | `provenance.py` delegates to it |
-| film packages | ship real providers | `providers.py` reference classes yield to an entry-point registry; missions bind providers by name |
+| `bond-api` (frozen `MissionProvider`) | **wired** | `film_providers.py` adapts real bond-api providers to the runner contract; `bond-api` is a local path dependency (imported lazily so the pure core stays liftable) |
+| `bond-utilities` (`mission_io`) | declared | `provenance.py` may delegate to it; `mission_io.record_provenance_outcome` is the shared provenance helper |
+| film packages (27) | **wired** | `film_providers.load_film_providers`/`load_mission_providers` discover real films from `src/` and bind them; `providers.py` reference classes remain for pure tests |
 
-Acceptance criteria live in [`TODO.md`](TODO.md).
+Real-film missions (e.g. goldfinger → goldeneye → no_time_to_die) run through
+`MissionRunner` with checkpoint/resume + provenance; see `tests/test_film_binding.py`.
+
+Residual acceptance criteria live in [`TODO.md`](TODO.md).
