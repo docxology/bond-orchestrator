@@ -1,5 +1,23 @@
-# Code-centric exemplar: optional monorepo adapters only.
-allow_infrastructure_imports:
-  - src/analysis/_infra.py
-  - src/_runtime.py
-  - src/benchmark_support.py
+# BOND-ORCHESTRATOR layer contract — pure core first, thin adapters only.
+# Enforced by scripts/audit/check_template_drift.py --strict (when run inside
+# the template) and by the zero-mock / coverage gates in pyproject.toml.
+
+# The orchestration core must stay infrastructure-free (copy-pasteable into
+# any Python environment): protocol.py, graph.py, runner.py, missions.py,
+# providers.py, provenance.py.
+infrastructure_free_core:
+  - src/bond_orchestrator/protocol.py
+  - src/bond_orchestrator/graph.py
+  - src/bond_orchestrator/runner.py
+  - src/bond_orchestrator/missions.py
+  - src/bond_orchestrator/providers.py
+  - src/bond_orchestrator/provenance.py
+  - src/bond_orchestrator/manuscript_variables.py
+
+# scripts/ are thin orchestrators (sys.path bootstrap + argv forwarding only).
+thin_scripts:
+  - scripts/run_mission.py
+  - scripts/generate_manuscript_variables.py
+
+# No module in src/ or scripts/ may import infrastructure.*; the package runs
+# standalone.  When bond-api/bond-utilities land, adapters go here.

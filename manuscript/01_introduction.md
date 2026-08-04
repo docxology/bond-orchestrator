@@ -1,60 +1,34 @@
-# Introduction {#sec:introduction}
+# Introduction
 
-This `bond-orchestrator` serves as the foundational exemplar for the [Research Project Template](https://github.com/docxology/template) ecosystem, demonstrating a fully-tested numerical optimization implementation bracketed by rigorous infrastructure, hermetic testing, and extensive documentation architectures. The prose, the labelled figures, and the labelled equations have all been generated through an auditable custody chain starting from algorithm implementation through strict CI/CD validation to multi-format `.pdf` compilation.
+The BOND suite splits multi-package research-and-response operations into
+six cooperating packages: `bond-utilities` (shared mission I/O and
+provenance), `bond-api` (the `MissionProvider` contract), `bond-coordinator`
+(fleet-level planning), `bond-orchestrator` (this package — Layer 3, the DAG
+runner), `bond-cli`, and `bond-ops`. Each film package (GOLDFINGER,
+GOLDENEYE, NO TIME TO DIE, ...) is itself a self-contained mission capability
+that implements the provider protocol.
 
-## Template Architecture Context
+This package, **BOND-ORCHESTRATOR** (codename **DAG 00**), is responsible for
+one thing: running a mission across N providers end-to-end and reporting a
+single consolidated debrief. It does not implement any film's business logic —
+that belongs to the providers — and it does not decide which missions exist —
+that belongs to the mission registry in
+`src/bond_orchestrator/missions.py`. It only guarantees *order*, *resumability*,
+and *provenance*.
 
-Scientific engineering requires mathematical accuracy combined with software reliability. This project unifies theoretical optimization with the repository's three foundational pillars:
+The guarantees are enforced by construction:
 
-1. **`infrastructure/` Layer (Root Directory)**: A modular stack of importable Python packages providing the computational scaffolding. The current package count is measured in the template repository's generated canonical facts rather than repeated here because it changes as infrastructure modules are added or retired.
-2. **`tests/` Framework (`projects/working/bond/bond-orchestrator/tests/`)**: An uncompromising validation layer maintaining a zero-mock testing policy. This is enforced automatically via the [CI workflow](https://github.com/docxology/template/blob/main/.github/workflows/ci.yml) mapping to `pyproject.toml` directives.
-3. **`docs/` Knowledge Base (`projects/working/bond/bond-orchestrator/docs/`)**: A structured repository of architectural guidelines, operational patterns, and the Rigorous Agentic Scientific Protocol (RASP) that governs the AI-assisted agents writing these very texts.
+- **Order** — `src/bond_orchestrator/graph.py` builds the film DAG from
+  `depends_on` edges and computes a canonical topological order (Kahn's
+  algorithm with id tie-breaking), so execution order never depends on
+  declaration order or dictionary iteration.
+- **Resumability** — `src/bond_orchestrator/runner.py` persists every
+  completed `(phase, package)` step to a state directory and replays it on
+  resume, continuing from the last completed step.
+- **Provenance** — `src/bond_orchestrator/provenance.py` writes one
+  provenance record per executed plan step and per debrief, with a
+  deterministic run id.
 
-This implementation of gradient descent algorithms for solving optimization problems is used as the vehicle to demonstrate these pillars. The theoretical problem stated in [@eq:optimization_problem] is mapped programmatically inside the [optimizer module](https://github.com/docxology/template/blob/main/projects/working/bond/bond-orchestrator/src/optimizer.py):
-
-\begin{equation}
-\label{eq:optimization_problem}
-\min_{x \in \mathbb{R}^n} f(x)
-\end{equation}
-
-where $f: \mathbb{R}^n \rightarrow \mathbb{R}$ is a continuously differentiable objective function.
-
-## Infrastructure Integration
-
-Rather than existing as isolated scripts, this project extensively leverages the `infrastructure` layer:
-
-- **Scientific Utilities**: Utilizing `infrastructure.scientific.stability` and `infrastructure.scientific.benchmarking` to check numerical boundaries and exercise runtime performance diagnostics without pinning host-dependent timings.
-- **Hermetic Validation**: Deploying `infrastructure.validation` components (`markdown_validator`, `output_validator`) to ensure generated artifacts are structurally valid and traceable.
-- **Reporting & Rendering**: Employing `infrastructure.rendering.pdf_renderer` and `infrastructure.reporting.executive_reporter` to automatically transform code outputs into this finalized manuscript.
-
-## Algorithm Overview
-
-The reference gradient descent algorithm iteratively updates the solution using the rule shown in [@eq:gradient_descent_update]:
-
-\begin{equation}
-\label{eq:gradient_descent_update}
-x_{k+1} = x_k - \alpha \nabla f(x_k)
-\end{equation}
-
-where $\alpha > 0$ is the step size (learning rate) and $\nabla f(x_k)$ is the gradient of the objective function at iteration $k$.
-
-## Exemplar Implementation Goals
-
-As the representative project for the repository, this implementation explicitly demonstrates:
-
-1. **Infrastructure-Coupled Code**: Scientific implementations that delegate logging, file ops, and reporting to the `infrastructure` core.
-2. **Zero-Mock Verification**: A strict comprehensive validation suite proving numerical accuracy without artificial test boundaries.
-3. **Automated Research Pipelines**: High-precision analyses that generate publication-quality, accessible visualizations automatically.
-4. **Agentic Documentation standards**: Native adherence to the RASP methodology and `AGENTS.md` guidelines, ensuring the logic remains verifiable by both human and artificial intelligence.
-
-## Reader's guide to the manuscript
-
-- **[@sec:methodology]** ties pseudocode to `gradient_descent()` and explains how stability checks and benchmarks call into `infrastructure.scientific`.
-- **[@sec:results]** is figure-centric: every panel references a generator in `src/figures/` (orchestrated via `scripts/optimization_analysis.py`) and uses `CONFIG_*` / `RESULT_*` template tokens for numeric values.
-- **[@sec:experimental_setup]** lists the exact YAML fields (`experiment:` block) that controlled the run whose artifacts you are viewing.
-- **[@sec:reproducibility]** records the configuration hash and artifact inventory produced alongside the PDF.
-- **[@sec:scope]** states scope and related literature so the exemplar is not mistaken for a general-purpose optimizer benchmark suite.
-
-## Why a quadratic model
-
-Restricting $f$ to a quadratic with known $(A,b)$ keeps the optimum, gradient, and spectral data explicit. For $A = I$ and $b = \mathbf{1}$, the optimal point is $x^\ast = \mathbf{1}$ and gradient descent with fixed $\alpha$ reduces to a linear iteration in the error (see [@eq:scalar_linear_update] in the results section). That simplicity isolates step-size effects and makes divergent choices ($\alpha \geq 2$ in 1D) visible in both plots and CSV rows without requiring trust-region or line-search fixes—those extensions are left to future work ([@sec:scope]).
+The reader's guide: §2 details the DAG model and the five-phase execution
+lifecycle; §3 reports the measured OPERATION OMNIBUS execution; §5 lists the
+configured mission parameters; §6 documents reproducibility.

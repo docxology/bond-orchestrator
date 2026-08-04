@@ -1,24 +1,37 @@
-# Scope, Related Work, and Positioning {#sec:scope}
+# Scope and Related Work
 
-This section situates the exemplar scientifically and states explicit boundaries. The goal is not to compete with monographs on nonlinear programming [@nocedal2006numerical; @bertsekas1999nonlinear], but to show how a minimal, test-backed optimization story fits the template's reproducibility and rendering stack [@peng2011reproducible].
+## 7.1 Scope
 
-## Classical gradient methods
+This package scopes to orchestration only:
 
-Smooth unconstrained minimization via first-order updates has a long lineage, from Cauchy's early descent perspective [@cauchy1847methode] to modern treatments of convex problems [@boyd2004convex] and accelerated gradient schemes [@nesterov2013gradient]. Polyak's classical discussion of gradient convergence factors remains relevant when interpreting empirical iteration counts [@polyak1964some]. The present manuscript restricts attention to **fixed-step** gradient descent on a **convex quadratic**, where rates reduce to scalar linear recurrences in the error ([@sec:results], [@eq:scalar_linear_update]).
+- **In scope**: DAG construction and validation, deterministic topological
+  execution, checkpoint/resume, provenance recording, canned mission
+  registry, thin CLI.
+- **Out of scope**: film business logic (provider concern), mission *choice*
+  (coordinator concern), protocol ownership once `bond-api` lands (see
+  §7.3), shared mission I/O once `bond-utilities` lands (see `TODO.md`).
 
-## Adaptive and stochastic extensions
+Parallel execution is deliberately deferred: the runner executes sequentially
+because determinism and resumability are the Phase 1 guarantees. The DAG order
+is what makes parallel execution safe in a later phase, since a consumer's
+dependencies are always scheduled before it.
 
-Practical machine-learning optimizers (e.g., Adam [@kingma2014adam]) introduce momentum, adaptive preconditioning, or noise from minibatching. Those methods are **out of scope** for `bond-orchestrator`: the exemplar deliberately keeps the algorithm minimal so that failures (divergent $\alpha$, iteration caps) are interpretable without confounding from stochastic sampling or line-search logic.
+## 7.2 Related work
 
-## What this project proves about the template
+Topological sorting of dependency graphs dates to Kahn's algorithm
+[@kahn1962topological] and is standard material in algorithms texts
+[@cormen2009introduction]. Long-running multi-stage workloads recover from
+interruption through checkpoint/rollback-recovery protocols, surveyed in
+[@elnozahy2002survey]; the runner's manifest + per-step state files follow
+that pattern specialised for deterministic single-node execution.
 
-The scientific claims through [@sec:introduction], [@sec:methodology], and [@sec:results] are standard textbook material. The **non-standard** contribution is procedural: configuration in `manuscript/config.yaml` drives `run_convergence_experiment()`, figures, CSV exports, and `RESULT_*` token substitution (`scripts/z_generate_manuscript_variables.py`) so that PDF, HTML, and validation logs refer to the same numbers. That pattern is what downstream projects should copy—whether the domain is optimization, differential equations, or Bayesian workflows.
+## 7.3 Integration points (declared, not yet wired)
 
-## Explicit limitations
+- `bond-api` will own the canonical `MissionProvider` protocol; this package
+  already implements against it and will re-export instead of defining.
+- `bond-utilities` will ship `mission_io`; `provenance.py` is the drop-in
+  equivalent and will delegate to it.
+- Real film packages will ship their own providers; the reference providers in
+  `src/bond_orchestrator/providers.py` will yield to an entry-point registry.
 
-1. **Dimensionality**: Default experiments emphasize $d = 1$ with $A = I$ for transparent plotting; the benchmark figure explores $d > 1$ only with identity Hessians, so no ill-conditioning effects appear.
-2. **Step-size policy**: Only constant $\alpha$ is implemented in `src/optimizer.py`; there is no Wolfe or Armijo backtracking.
-3. **Global optimization**: Convexity is assumed; no basin-hopping or restarts are studied.
-4. **Numerical model**: Double-precision floating point only; no interval or arbitrary-precision analysis.
-
-These limitations are intentional: they narrow the failure surface so that infrastructure concerns—tests, logging, figure registration, and PDF cross-references—remain visible rather than buried under algorithmic complexity.
+Each integration point is tracked with acceptance criteria in `TODO.md`.

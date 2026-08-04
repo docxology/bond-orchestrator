@@ -1,0 +1,224 @@
+{
+  "briefs": [
+    {
+      "package_id": "goldfinger",
+      "provider": "goldfinger",
+      "text": "BRIEF GOLDFINGER: recon the Fort Knox gold market. Objective: recon the gold market."
+    },
+    {
+      "package_id": "goldeneye",
+      "provider": "goldeneye",
+      "text": "BRIEF GOLDENEYE: assess EMP resilience of hardened sites. Objective: assess EMP resilience."
+    },
+    {
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die",
+      "text": "BRIEF NO TIME TO DIE: develop a bioweapon countermeasure. Objective: develop bioweapon countermeasure."
+    }
+  ],
+  "consolidated_debrief": "OPERATION_OMNIBUS \u2014 consolidated debrief\nexecution order: goldfinger \u2192 goldeneye \u2192 no_time_to_die\n\n* goldfinger: PASS \u2014 Market recon complete; gold exposure quantified.\n  metrics: market_index=0.92, reserves_t=4200\n* goldeneye: PASS \u2014 EMP resilience mapped; uplink relays hardened.\n  metrics: shield_rating=0.87, uplink_redundancy=2\n* no_time_to_die: PASS \u2014 Countermeasure validated; neutralization confirmed.\n  metrics: candidate_antidotes=3, neutralization_rating=0.99",
+  "debriefs": [
+    {
+      "assessment": "Market recon complete; gold exposure quantified.",
+      "metrics": {
+        "market_index": 0.92,
+        "reserves_t": 4200.0
+      },
+      "package_id": "goldfinger",
+      "provider": "goldfinger",
+      "verdict": "pass"
+    },
+    {
+      "assessment": "EMP resilience mapped; uplink relays hardened.",
+      "metrics": {
+        "shield_rating": 0.87,
+        "uplink_redundancy": 2.0
+      },
+      "package_id": "goldeneye",
+      "provider": "goldeneye",
+      "verdict": "pass"
+    },
+    {
+      "assessment": "Countermeasure validated; neutralization confirmed.",
+      "metrics": {
+        "candidate_antidotes": 3.0,
+        "neutralization_rating": 0.99
+      },
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die",
+      "verdict": "pass"
+    }
+  ],
+  "executions": [
+    {
+      "action": "deploy bullion analysts",
+      "detail": "deploy bullion analysts complete",
+      "outcome": "success",
+      "package_id": "goldfinger",
+      "provider": "goldfinger",
+      "step_index": 1
+    },
+    {
+      "action": "price Fort Knox exposure",
+      "detail": "price Fort Knox exposure complete",
+      "outcome": "success",
+      "package_id": "goldfinger",
+      "provider": "goldfinger",
+      "step_index": 2
+    },
+    {
+      "action": "map EMP contours",
+      "detail": "map EMP contours complete",
+      "outcome": "success",
+      "package_id": "goldeneye",
+      "provider": "goldeneye",
+      "step_index": 1
+    },
+    {
+      "action": "harden uplink relays",
+      "detail": "harden uplink relays complete",
+      "outcome": "success",
+      "package_id": "goldeneye",
+      "provider": "goldeneye",
+      "step_index": 2
+    },
+    {
+      "action": "synthesize antidote candidates",
+      "detail": "synthesize antidote candidates complete",
+      "outcome": "success",
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die",
+      "step_index": 1
+    },
+    {
+      "action": "validate neutralization assay",
+      "detail": "validate neutralization assay complete",
+      "outcome": "success",
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die",
+      "step_index": 2
+    }
+  ],
+  "mission": {
+    "name": "OPERATION_OMNIBUS",
+    "packages": [
+      {
+        "depends_on": [],
+        "id": "goldfinger",
+        "objective": "recon the gold market",
+        "title": "GOLDFINGER"
+      },
+      {
+        "depends_on": [
+          "goldfinger"
+        ],
+        "id": "goldeneye",
+        "objective": "assess EMP resilience",
+        "title": "GOLDENEYE"
+      },
+      {
+        "depends_on": [
+          "goldeneye"
+        ],
+        "id": "no_time_to_die",
+        "objective": "develop bioweapon countermeasure",
+        "title": "NO TIME TO DIE"
+      }
+    ]
+  },
+  "order": [
+    "goldfinger",
+    "goldeneye",
+    "no_time_to_die"
+  ],
+  "plans": [
+    {
+      "package_id": "goldfinger",
+      "provider": "goldfinger",
+      "steps": [
+        {
+          "action": "deploy bullion analysts",
+          "detail": "",
+          "index": 1
+        },
+        {
+          "action": "price Fort Knox exposure",
+          "detail": "",
+          "index": 2
+        }
+      ]
+    },
+    {
+      "package_id": "goldeneye",
+      "provider": "goldeneye",
+      "steps": [
+        {
+          "action": "map EMP contours",
+          "detail": "",
+          "index": 1
+        },
+        {
+          "action": "harden uplink relays",
+          "detail": "",
+          "index": 2
+        }
+      ]
+    },
+    {
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die",
+      "steps": [
+        {
+          "action": "synthesize antidote candidates",
+          "detail": "",
+          "index": 1
+        },
+        {
+          "action": "validate neutralization assay",
+          "detail": "",
+          "index": 2
+        }
+      ]
+    }
+  ],
+  "recon": [
+    {
+      "findings": [
+        "market liquidity: high",
+        "gold reserves audited: 4200 t"
+      ],
+      "outputs": {
+        "gold_reserves_t": "4200",
+        "market_index": "0.92"
+      },
+      "package_id": "goldfinger",
+      "provider": "goldfinger"
+    },
+    {
+      "findings": [
+        "EMP shielding rated: 0.87",
+        "satellite uplink redundancy: 2",
+        "cites goldfinger: gold_reserves_t=4200, market_index=0.92"
+      ],
+      "outputs": {
+        "emp_shield_rating": "0.87",
+        "uplink_redundancy": "2"
+      },
+      "package_id": "goldeneye",
+      "provider": "goldeneye"
+    },
+    {
+      "findings": [
+        "candidate antidotes screened: 3",
+        "synthesis pipeline primed",
+        "cites goldeneye: emp_shield_rating=0.87, uplink_redundancy=2"
+      ],
+      "outputs": {
+        "candidate_antidotes": "3",
+        "countermeasure_ready": "true"
+      },
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die"
+    }
+  ]
+}

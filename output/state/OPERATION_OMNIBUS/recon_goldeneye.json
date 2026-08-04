@@ -1,0 +1,18 @@
+{
+  "package": "goldeneye",
+  "payload": {
+    "findings": [
+      "EMP shielding rated: 0.87",
+      "satellite uplink redundancy: 2",
+      "cites goldfinger: gold_reserves_t=4200, market_index=0.92"
+    ],
+    "outputs": {
+      "emp_shield_rating": "0.87",
+      "uplink_redundancy": "2"
+    },
+    "package_id": "goldeneye",
+    "provider": "goldeneye"
+  },
+  "phase": "recon",
+  "step": "recon:goldeneye"
+}

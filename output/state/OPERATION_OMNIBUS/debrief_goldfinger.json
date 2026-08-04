@@ -1,0 +1,15 @@
+{
+  "package": "goldfinger",
+  "payload": {
+    "assessment": "Market recon complete; gold exposure quantified.",
+    "metrics": {
+      "market_index": 0.92,
+      "reserves_t": 4200.0
+    },
+    "package_id": "goldfinger",
+    "provider": "goldfinger",
+    "verdict": "pass"
+  },
+  "phase": "debrief",
+  "step": "debrief:goldfinger"
+}

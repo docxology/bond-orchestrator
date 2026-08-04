@@ -6,15 +6,15 @@
       "orcid": "0000-0001-6232-9096"
     }
   ],
-  "description": "Source code for Convergence Analysis of Gradient Descent Optimization (2026).",
+  "description": "Source code for bond-orchestrator: A Deterministic Mission DAG Runner (BOND-ORCHESTRATOR, codename DAG 00) — Layer 3 mission DAG runner of the BOND suite, executing multi-package film missions over the MissionProvider protocol with checkpoint/resume and provenance.",
   "keywords": [
-    "optimization algorithms",
-    "gradient descent",
-    "convergence analysis",
-    "numerical methods",
-    "mathematical programming",
-    "reproducible research",
-    "infrastructure automation"
+    "mission orchestration",
+    "DAG scheduling",
+    "topological order",
+    "checkpoint/resume",
+    "deterministic execution",
+    "provenance",
+    "reproducible research"
   ],
   "license": "MIT",
   "related_identifiers": [
@@ -24,7 +24,7 @@
       "scheme": "doi"
     }
   ],
-  "title": "Convergence Analysis of Gradient Descent Optimization",
+  "title": "bond-orchestrator: A Deterministic Mission DAG Runner (BOND-ORCHESTRATOR, codename DAG 00)",
   "upload_type": "software",
   "version": "2.5.2"
 }

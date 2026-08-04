@@ -1,0 +1,17 @@
+{
+  "package": "goldfinger",
+  "payload": {
+    "findings": [
+      "market liquidity: high",
+      "gold reserves audited: 4200 t"
+    ],
+    "outputs": {
+      "gold_reserves_t": "4200",
+      "market_index": "0.92"
+    },
+    "package_id": "goldfinger",
+    "provider": "goldfinger"
+  },
+  "phase": "recon",
+  "step": "recon:goldfinger"
+}

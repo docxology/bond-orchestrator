@@ -1,0 +1,23 @@
+{
+  "package": "no_time_to_die",
+  "payload": [
+    {
+      "action": "synthesize antidote candidates",
+      "detail": "synthesize antidote candidates complete",
+      "outcome": "success",
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die",
+      "step_index": 1
+    },
+    {
+      "action": "validate neutralization assay",
+      "detail": "validate neutralization assay complete",
+      "outcome": "success",
+      "package_id": "no_time_to_die",
+      "provider": "no_time_to_die",
+      "step_index": 2
+    }
+  ],
+  "phase": "execute",
+  "step": "execute:no_time_to_die"
+}

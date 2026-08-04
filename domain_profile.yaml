@@ -1,49 +1,40 @@
-domain: code_research
-display_name: Code Research Exemplar
+domain: mission_orchestration
+display_name: BOND-ORCHESTRATOR (DAG 00) — Mission DAG Runner
 required_packages:
-  - numpy
-  - matplotlib
+  - pyyaml
   - pytest
 preferred_outputs:
+  - json
+  - csv
   - pdf
   - html
-  - docx
-  - epub
 validation_gates:
-  - experiment_method_design
-  - artifact_manifest
-  - evidence_grounding
-  - render_validation
-  - publication_readiness
-figure_types:
-  - convergence_plot
-  - performance_benchmark
-  - sensitivity_analysis
-citation_policy: official_or_scholarly
-source_policy: "Prefer primary project outputs, official package documentation, and scholarly optimization references."
-review_gates:
-  - experiment_method_design
-  - render_validation
-  - publication_readiness
+  - coverage_gate
+  - zero_mock_policy
+  - determinism_check
+  - manuscript_token_crossref
 artifact_expectations:
+  - output/data/mission_report.json
+  - output/data/provenance/outcomes.json
+  - output/data/provenance/provenance.csv
   - output/data/manuscript_variables.json
-  - output/data/optimization_results.csv
-  - output/figures/convergence_plot.png
-  - output/reports/validation_report.json
-  - output/pdf/template_code_project_combined.pdf
+  - output/state/OPERATION_OMNIBUS/manifest.json
+source_policy: "Prefer primary project outputs (mission reports, provenance records) and official protocol documentation."
+review_gates:
+  - coverage_gate
+  - determinism_check
+  - protocol_conformance
 benchmark_rubric:
-  name: code-research-readiness
+  name: orchestrator-readiness
   dimensions:
-    - name: output_validity
-      weight: 1.0
-    - name: reproducibility_bundle
-      weight: 1.0
-    - name: artifact_manifest
-      weight: 1.0
-    - name: evidence_grounding
+    - name: deterministic_execution
       weight: 2.0
-    - name: render_success
+    - name: checkpoint_resume
+      weight: 2.0
+    - name: provenance_completeness
       weight: 1.0
-    - name: publication_readiness
+    - name: protocol_conformance
       weight: 1.0
-llm_prompt_guidance: "Use generated optimization artifacts and manuscript variables as the evidence source; do not invent numeric results."
+    - name: coverage_gate
+      weight: 1.0
+llm_prompt_guidance: "Use generated mission reports, provenance records, and manuscript variables as the evidence source; do not invent numeric results. Report measured values as observed."

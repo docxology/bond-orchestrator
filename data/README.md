@@ -1,6 +1,7 @@
 # bond-orchestrator/data
 
-Project-maintained **inputs** for the code exemplar (not pipeline outputs).
+Project-maintained **inputs** for the BOND-ORCHESTRATOR mission DAG runner
+(not pipeline outputs).
 
 ## Quick reference
 
@@ -8,6 +9,5 @@ Project-maintained **inputs** for the code exemplar (not pipeline outputs).
 | --- | --- |
 | `claim_ledger.yaml` | Source-backed numeric and artifact claims for evidence validation |
 
-Generated analysis outputs belong under `output/` during pipeline runs, not here.
-
+Generated mission outputs belong under `output/` during runs, not here.
 Schema and edit protocol: [`AGENTS.md`](AGENTS.md).

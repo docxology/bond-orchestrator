@@ -1,10 +1,6 @@
-# References {#sec:references}
+# References
 
-Bibliography lives in [`manuscript/references.bib`](references.bib) and is read by Pandoc during PDF render. The build pipeline invokes Pandoc with `--natbib`, so every `[@key]` citation in the manuscript is rewritten to the appropriate `\cite{}`/`\citep{}`/`\citet{}` LaTeX command and resolved against the bib file.
-
-To validate that `references.bib` is syntactically clean and contains the required fields per entry type:
-
-```bash
-uv run python -m infrastructure.reference.citation.cli validate \
-    projects/working/bond/bond-orchestrator/manuscript/references.bib --strict
-```
+- Kahn, A. B. (1962). Topological Sorting of Large Networks. *Communications of the ACM*, 5(11), 558–562. [@kahn1962topological]
+- Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2009). *Introduction to Algorithms* (3rd ed.). MIT Press. [@cormen2009introduction]
+- Elnozahy, E. N., Alvisi, L., Wang, Y.-M., & Johnson, D. B. (2002). A Survey of Rollback-Recovery Protocols in Message-Passing Systems. *ACM Computing Surveys*, 34(3), 375–408. [@elnozahy2002survey]
+- Friedman, D. A. (2026). *bond-orchestrator: A Deterministic Mission DAG Runner* (BOND-ORCHESTRATOR, codename DAG 00) [Software]. Active Inference Institute. [@bondorchestrator2026]

@@ -1,0 +1,10 @@
+{
+  "package": "goldeneye",
+  "payload": {
+    "package_id": "goldeneye",
+    "provider": "goldeneye",
+    "text": "BRIEF GOLDENEYE: assess EMP resilience of hardened sites. Objective: assess EMP resilience."
+  },
+  "phase": "brief",
+  "step": "brief:goldeneye"
+}

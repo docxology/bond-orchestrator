@@ -1,0 +1,161 @@
+[
+  {
+    "artifact_refs": {
+      "action": "deploy bullion analysts",
+      "step_index": "1"
+    },
+    "codename": "DAG 00",
+    "detail": "deploy bullion analysts complete",
+    "metrics": {},
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "success",
+    "package_id": "goldfinger",
+    "phase": "execute",
+    "provider": "goldfinger",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "action": "price Fort Knox exposure",
+      "step_index": "2"
+    },
+    "codename": "DAG 00",
+    "detail": "price Fort Knox exposure complete",
+    "metrics": {},
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "success",
+    "package_id": "goldfinger",
+    "phase": "execute",
+    "provider": "goldfinger",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "action": "map EMP contours",
+      "step_index": "1"
+    },
+    "codename": "DAG 00",
+    "detail": "map EMP contours complete",
+    "metrics": {},
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "success",
+    "package_id": "goldeneye",
+    "phase": "execute",
+    "provider": "goldeneye",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "action": "harden uplink relays",
+      "step_index": "2"
+    },
+    "codename": "DAG 00",
+    "detail": "harden uplink relays complete",
+    "metrics": {},
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "success",
+    "package_id": "goldeneye",
+    "phase": "execute",
+    "provider": "goldeneye",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "action": "synthesize antidote candidates",
+      "step_index": "1"
+    },
+    "codename": "DAG 00",
+    "detail": "synthesize antidote candidates complete",
+    "metrics": {},
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "success",
+    "package_id": "no_time_to_die",
+    "phase": "execute",
+    "provider": "no_time_to_die",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "action": "validate neutralization assay",
+      "step_index": "2"
+    },
+    "codename": "DAG 00",
+    "detail": "validate neutralization assay complete",
+    "metrics": {},
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "success",
+    "package_id": "no_time_to_die",
+    "phase": "execute",
+    "provider": "no_time_to_die",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "verdict": "pass"
+    },
+    "codename": "DAG 00",
+    "detail": "Market recon complete; gold exposure quantified.",
+    "metrics": {
+      "market_index": 0.92,
+      "reserves_t": 4200.0
+    },
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "pass",
+    "package_id": "goldfinger",
+    "phase": "debrief",
+    "provider": "goldfinger",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "verdict": "pass"
+    },
+    "codename": "DAG 00",
+    "detail": "EMP resilience mapped; uplink relays hardened.",
+    "metrics": {
+      "shield_rating": 0.87,
+      "uplink_redundancy": 2.0
+    },
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "pass",
+    "package_id": "goldeneye",
+    "phase": "debrief",
+    "provider": "goldeneye",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  },
+  {
+    "artifact_refs": {
+      "verdict": "pass"
+    },
+    "codename": "DAG 00",
+    "detail": "Countermeasure validated; neutralization confirmed.",
+    "metrics": {
+      "candidate_antidotes": 3.0,
+      "neutralization_rating": 0.99
+    },
+    "mission": "OPERATION_OMNIBUS",
+    "orchestrator": "BOND-ORCHESTRATOR",
+    "outcome": "pass",
+    "package_id": "no_time_to_die",
+    "phase": "debrief",
+    "provider": "no_time_to_die",
+    "run_id": "50f9c4e66eb3",
+    "schema_version": "1.0"
+  }
+]

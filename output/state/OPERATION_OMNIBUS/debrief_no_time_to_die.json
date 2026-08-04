@@ -1,0 +1,15 @@
+{
+  "package": "no_time_to_die",
+  "payload": {
+    "assessment": "Countermeasure validated; neutralization confirmed.",
+    "metrics": {
+      "candidate_antidotes": 3.0,
+      "neutralization_rating": 0.99
+    },
+    "package_id": "no_time_to_die",
+    "provider": "no_time_to_die",
+    "verdict": "pass"
+  },
+  "phase": "debrief",
+  "step": "debrief:no_time_to_die"
+}

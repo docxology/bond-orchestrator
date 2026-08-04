@@ -1,0 +1,20 @@
+{
+  "mission": "OPERATION_OMNIBUS",
+  "steps": [
+    "brief:goldeneye",
+    "brief:goldfinger",
+    "brief:no_time_to_die",
+    "debrief:goldeneye",
+    "debrief:goldfinger",
+    "debrief:no_time_to_die",
+    "execute:goldeneye",
+    "execute:goldfinger",
+    "execute:no_time_to_die",
+    "plan:goldeneye",
+    "plan:goldfinger",
+    "plan:no_time_to_die",
+    "recon:goldeneye",
+    "recon:goldfinger",
+    "recon:no_time_to_die"
+  ]
+}

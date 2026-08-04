@@ -1,68 +1,67 @@
 # bond-orchestrator TODO
 
-Forward-only backlog for the code-first numerical exemplar — the reference
-thin-orchestrator control-positive path for code-centric research projects.
+Forward-only backlog for **BOND-ORCHESTRATOR (DAG 00)** — Layer 3, the
+multi-package mission DAG runner.
 
-## Current validation evidence
+## Phase 1 — delivered (this pass)
 
-- Manuscript pre-render gate: `uv run python -m infrastructure.validation.cli prerender projects/working/bond/bond-orchestrator/manuscript --repo-root .`
-- Project tests and coverage: `uv run pytest projects/working/bond/bond-orchestrator/tests/ --cov=projects/working/bond/bond-orchestrator/src --cov-fail-under=90`
-- Stage 02 analysis must write `output/data/optimization_results.csv` before strict manuscript-variable generation: `uv run python scripts/pipeline/stage_02_analysis.py --project templates/bond-orchestrator`
-- Stage 03 manuscript render: `uv run python scripts/pipeline/stage_03_render.py --project templates/bond-orchestrator`
-- Stage 04 output validation: `uv run python scripts/pipeline/stage_04_validate.py --project templates/bond-orchestrator`
-- Repo drift gate: `uv run python scripts/audit/check_template_drift.py --strict`
-- Code quality: `uv run ruff check projects/working/bond/bond-orchestrator/src/` and `uv run mypy projects/working/bond/bond-orchestrator/src/` must both pass clean.
-- Benchmark reproducibility: tracked benchmark reports and figures contain only deterministic facts; wall-clock timing is logged as a runtime diagnostic, and two-run byte-equality tests enforce the boundary.
-- Live test count and measured coverage percentage → [`docs/_generated/COUNTS.md`](../../../docs/_generated/COUNTS.md) (regenerated, never hardcoded here; both numbers drift faster than this file).
+- Pure-core mission DAG runner over the `MissionProvider` protocol:
+  `src/bond_orchestrator/{protocol,graph,runner,missions,providers,provenance,manuscript_variables,cli}.py`.
+- Canned missions: OPERATION OMNIBUS (chain), OPERATION DIAMOND (diamond),
+  OPERATION SINGLET.
+- Checkpoint/resume: per-(phase, package) step files + manifest; resume
+  replays completed steps and continues from the last completed step.
+- Provenance (mission_io-equivalent): one record per executed step + debrief,
+  deterministic run id, `outcomes.json` + `provenance.csv`.
+- Manuscript identity BOND-ORCHESTRATOR / codename DAG 00; `{{TOKEN}}`
+  hydration from `manuscript/config.yaml` + `output/data/mission_report.json`.
+- Thin CLI + thin scripts; zero-mock deterministic test suite (73 tests).
 
-## Accuracy pass — 2026-08-02 (measured)
+### Current validation evidence (measured 2026-08-04)
 
-- Prerender: clean (no render-blocking pitfalls, no undefined citations).
-- pytest: **242 passed**, **97.67 %** coverage on `src/` (floor 90 %).
-- Stage 02: 8/8 analysis scripts; 46 manuscript variables generated.
-- Stage 03: combined PDF rendered (25 pages), `Valid PDFs: 1/1`; 0 `^! ` lines in compile logs; 0 `??` in `pdftotext`.
-- Stage 04: all checks pass (PDF, bookends, markdown, structure, figure registry, evidence registry, design overlays, artifact manifest); rendered-provenance receipt written (54 sources / 18 config / 72 outputs).
-- Drift: `check_template_drift.py --project templates/bond-orchestrator --strict` → no drift detected.
+- `uv run pytest tests/ --cov=src --cov-fail-under=90` → **77 passed**,
+  **98.16%** line coverage on `src/` (floor 90%), branch ≥92%.
+- `uv run ruff check src/ scripts/` clean; `uv run mypy src/ scripts/` clean.
+- `rg -n "template_code_project"` → only self-referential hits inside the
+  verification-command docs (0 leftover scaffold strings in code/content).
+- OPERATION OMNIBUS runs deterministically; two fresh runs produce
+  byte-identical reports/provenance; interrupted runs resume from the last
+  completed step (enforced by tests).
 
-### Fixed in this pass
+## BOND-suite integration points (blocked on dependencies)
 
-- `fig:complexity` caption corrected to the actual 3×2 six-panel layout; replaced the false "both saturate at the iteration cap" claim (α=2.5 terminates via `non_finite`) and described the stability-width and cross-profile bottom panels.
-- Agency-category boundary corrected to the code's `α < 0.3` threshold (`manuscript/03_results.md`).
-- Removed literal `{{CONFIG_*}}` / `{{RESULT_*}}` wildcard prose in `01_introduction.md` and `07_scope_and_related_work.md` so the rendered PDF no longer leaks raw braces.
-- `scripts/AGENTS.md` + `scripts/README.md`: listed the on-disk `04_benchmark_stage.py`, `08_connector_search.py`, `09_provenance_record.py`, `10_research_workflow.py`, `__init__.py`; replaced stale `[0.01, 0.05, 0.1, 0.2]` step-size grids with the configured six-value grid.
-- `tests/AGENTS.md` + `tests/README.md`: added `test_benchmark_support.py` to diagram, class line, and bullets.
-- Root `AGENTS.md`: refreshed `SRC_F` / `M_F` mermaid listings, ProgressBar grid, stray `##` heading.
-- `docs/AGENTS.md`: corrected the `{{VARIABLE}}` token count (28 → 46) and stale per-file line counts; `docs/syntax_guide.md`: `CONFIG_VERSION` 2.5.2, added missing `RESULT_*` / `ARTIFACT_*` / `STABILITY_FUNCTION` rows, corrected the "never use `\begin{equation}`" guidance (the manuscript uses that form and it resolves).
-- `manuscript/AGENTS.md`: version 2.5.2; File Inventory token lists now match the live per-file `{{TOKEN}}` usage exactly (verified programmatically).
-- `docs/README.md`: removed the stale "127 files, 14 subdirectories" literal (COUNTS.md is authoritative).
-- Added `.agents/README.md` and `.agents/skills/README.md` per the shared exemplar catalog contract; all relative cross-references resolve.
+| # | Integration | Dependency | Acceptance criteria |
+| --- | --- | --- | --- |
+| 1 | `protocol.py` re-exports canonical `MissionProvider` | `bond-api` ships the contract | `from bond_api import MissionProvider` is the single source; orchestrator tests still green |
+| 2 | `provenance.py` delegates to `mission_io` | `bond-utilities` ships `mission_io` | Provenance records written via `bond_utilities.mission_io`; schema identical; tests green |
+| 3 | Real film providers bound by entry-point registry | film packages ship providers | `run_mission.py OPERATION_OMNIBUS` executes real provider logic; reference providers demoted to fixtures |
+| 4 | Mission handoff | `bond-coordinator` ships mission specs | Coordinator-produced mission objects (same `Mission` shape) execute unchanged |
 
-## Integrity and template-status gaps
+Until each lands, this package runs on its own pure core — no stalls.
 
-- Keep this exemplar as the smallest reliable control-positive path for code-centric research projects.
-- Keep dashboard, API docs, figures, and manuscript variables generated from source, not hand-maintained output snapshots.
-- Add a project-local output validation script only if it checks artifacts beyond the generic Stage 04 validators.
-- Add or document a stable final artifact-manifest refresh path for single-stage analysis/render/copy checks. **Documented:** `infrastructure.core.pipeline.artifacts.snapshot_current_artifact_manifest` serves this role.
+## Backlog (ordered)
 
-## Configurable-surface gaps
+1. Add a `--list-providers` CLI view and provider/package coverage report
+   (which film capabilities a mission exercises).
+2. Parallel-safe execution flag (`--parallel`): run independent packages'
+   phases concurrently while preserving topological order; keep sequential as
+   the default and keep byte-determinism tests green.
+3. Optional wall-clock diagnostics (runtime-only, never persisted): phase
+   durations per package.
+4. `output/` regeneration script that runs mission → provenance → manuscript
+   variables in one thin orchestrator (pipeline stage).
+5. Mission manifest checksum: record config/registry hash in
+   `manifest.json` and warn on resume when the mission definition changed.
+6. Extend the reference provider set to cover every film package in the BOND
+   suite (casino_royale_1967 … you_only_live_twice) as canned reference
+   missions, once `bond-coordinator` declares the fleet roster.
 
-- Keep `manuscript/config.yaml.example` as the richer copy-and-customize template for publication, LLM, testing, and steganography toggles.
-- Add any future optimizer hyperparameter config under typed source loaders rather than reading ad hoc YAML from scripts.
+## Quality gates (never regress)
 
-## Documentation and signposting gaps
-
-- Keep README quick-start commands aligned with the qualified project name `templates/bond-orchestrator`.
-- Link new public artifacts from README, AGENTS, and `docs/_generated/exemplar_roster.md` through the generator.
-
-## Test and validator gaps
-
-- Add a negative control before widening optimizer claims beyond the bundled deterministic objectives.
-- Add dashboard schema assertions whenever dashboard fields or chart payloads change.
-- Close remaining infrastructure-path branch misses in `analysis/scientific_reports.py` and `analysis/workflow.py` with subprocess isolation tests mirroring `TestImportFallback` if coverage gates tighten further.
-
-## Ordered improvement ladder
-
-1. Preserve the strict analysis-to-manuscript variable contract.
-2. Add focused validators for any new generated artifact family.
-3. Expand benchmark scenarios only with deterministic seeds, expected-shape tests, and documented claim boundaries.
-4. Refresh generated docs after any public-surface change.
+- ≥90% line+branch coverage on `src/` (`pyproject.toml` gate).
+- Zero mocks in `tests/`; deterministic fake providers implement the REAL
+  protocol.
+- `ruff check` + `mypy` clean on `src/` and `scripts/`.
+- Determinism: no wall-clock or RNG in any persisted artifact; two-run
+  byte-equality tests enforce the boundary.
+- Manuscript metrics injected via `{{TOKEN}}` only — never hand-authored.

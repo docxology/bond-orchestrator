@@ -1,0 +1,23 @@
+{
+  "package": "goldeneye",
+  "payload": [
+    {
+      "action": "map EMP contours",
+      "detail": "map EMP contours complete",
+      "outcome": "success",
+      "package_id": "goldeneye",
+      "provider": "goldeneye",
+      "step_index": 1
+    },
+    {
+      "action": "harden uplink relays",
+      "detail": "harden uplink relays complete",
+      "outcome": "success",
+      "package_id": "goldeneye",
+      "provider": "goldeneye",
+      "step_index": 2
+    }
+  ],
+  "phase": "execute",
+  "step": "execute:goldeneye"
+}

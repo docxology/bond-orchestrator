@@ -1,0 +1,21 @@
+{
+  "package": "goldfinger",
+  "payload": {
+    "package_id": "goldfinger",
+    "provider": "goldfinger",
+    "steps": [
+      {
+        "action": "deploy bullion analysts",
+        "detail": "",
+        "index": 1
+      },
+      {
+        "action": "price Fort Knox exposure",
+        "detail": "",
+        "index": 2
+      }
+    ]
+  },
+  "phase": "plan",
+  "step": "plan:goldfinger"
+}

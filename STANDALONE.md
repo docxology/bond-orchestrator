@@ -18,14 +18,17 @@ Additional locations are config-declared publication evidence; the central index
 
 ## Purpose
 
-`bond-orchestrator` is the canonical code-driven research exemplar: tested
-source modules, deterministic analysis scripts, generated figures, manuscript
-variables, and publication-ready metadata.
+`bond-orchestrator` is the Layer 3 mission DAG runner of the BOND suite:
+multi-package film missions executed end-to-end over the `MissionProvider`
+protocol, with deterministic topological order, checkpoint/resume, and
+provenance on every outcome.
 
 ## Copy This When
 
-Use it for computational research where claims should trace to source code,
-analysis outputs, figures, and project-local tests.
+Use it as the scaffold for a deterministic orchestration package — mission
+DAGs, provider protocols, checkpoint/resume, provenance, and manuscript
+variable hydration — where every claim should trace to source code,
+deterministic providers, and project-local tests.
 
 ## Clean Copy Command
 
@@ -51,9 +54,9 @@ rsync -a \
 
 - Update `manuscript/config.yaml`, `domain_profile.yaml`, `experiment_plan.yaml`,
   `CITATION.cff`, `.zenodo.json`, `codemeta.json`, and `pyproject.toml`.
-- Replace the optimizer, experiment config, manuscript variables, and figure
-  generation with the fork's research code.
-- Regenerate analysis outputs before updating manuscript result claims.
+- Replace the mission registry, providers, and manuscript variables with the
+  fork's orchestration code.
+- Regenerate mission outputs before updating manuscript result claims.
 
 ## Validation Commands
 

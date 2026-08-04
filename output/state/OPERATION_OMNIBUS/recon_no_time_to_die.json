@@ -1,0 +1,18 @@
+{
+  "package": "no_time_to_die",
+  "payload": {
+    "findings": [
+      "candidate antidotes screened: 3",
+      "synthesis pipeline primed",
+      "cites goldeneye: emp_shield_rating=0.87, uplink_redundancy=2"
+    ],
+    "outputs": {
+      "candidate_antidotes": "3",
+      "countermeasure_ready": "true"
+    },
+    "package_id": "no_time_to_die",
+    "provider": "no_time_to_die"
+  },
+  "phase": "recon",
+  "step": "recon:no_time_to_die"
+}

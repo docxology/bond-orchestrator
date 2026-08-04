@@ -1,0 +1,10 @@
+{
+  "package": "goldfinger",
+  "payload": {
+    "package_id": "goldfinger",
+    "provider": "goldfinger",
+    "text": "BRIEF GOLDFINGER: recon the Fort Knox gold market. Objective: recon the gold market."
+  },
+  "phase": "brief",
+  "step": "brief:goldfinger"
+}

@@ -1,0 +1,10 @@
+run_id,orchestrator,codename,schema_version,mission,package_id,provider,phase,outcome,detail,artifact_refs,metrics
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,goldfinger,goldfinger,execute,success,deploy bullion analysts complete,"{""action"": ""deploy bullion analysts"", ""step_index"": ""1""}",{}
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,goldfinger,goldfinger,execute,success,price Fort Knox exposure complete,"{""action"": ""price Fort Knox exposure"", ""step_index"": ""2""}",{}
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,goldeneye,goldeneye,execute,success,map EMP contours complete,"{""action"": ""map EMP contours"", ""step_index"": ""1""}",{}
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,goldeneye,goldeneye,execute,success,harden uplink relays complete,"{""action"": ""harden uplink relays"", ""step_index"": ""2""}",{}
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,no_time_to_die,no_time_to_die,execute,success,synthesize antidote candidates complete,"{""action"": ""synthesize antidote candidates"", ""step_index"": ""1""}",{}
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,no_time_to_die,no_time_to_die,execute,success,validate neutralization assay complete,"{""action"": ""validate neutralization assay"", ""step_index"": ""2""}",{}
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,goldfinger,goldfinger,debrief,pass,Market recon complete; gold exposure quantified.,"{""verdict"": ""pass""}","{""market_index"": 0.92, ""reserves_t"": 4200.0}"
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,goldeneye,goldeneye,debrief,pass,EMP resilience mapped; uplink relays hardened.,"{""verdict"": ""pass""}","{""shield_rating"": 0.87, ""uplink_redundancy"": 2.0}"
+50f9c4e66eb3,BOND-ORCHESTRATOR,DAG 00,1.0,OPERATION_OMNIBUS,no_time_to_die,no_time_to_die,debrief,pass,Countermeasure validated; neutralization confirmed.,"{""verdict"": ""pass""}","{""candidate_antidotes"": 3.0, ""neutralization_rating"": 0.99}"

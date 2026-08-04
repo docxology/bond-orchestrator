@@ -1,90 +1,108 @@
-# Architecture: The Thin Orchestrator Flow
+# Architecture — bond-orchestrator
 
-The `bond-orchestrator` exemplar is designed around a strict separation of concerns across three operational layers. Understanding this architecture before modifying any file prevents the most common errors: math appearing in scripts, reusable project logic remaining trapped in CLI files, and mocks appearing in tests.
-
-## Layer Reference
-
-| Layer | Primary Files | Public API | Invariants | Testability |
-|---|---|---|---|---|
-| **`src/` — Project Logic** | `src/optimizer.py`, `src/invariants.py`, `src/experiment_config.py`, `src/analysis/`, `src/figures/`, `src/dashboard.py`, `src/manuscript_variables.py` | Optimizer primitives plus importable analysis/figure/dashboard builders | Math primitives stay pure; `experiment_config.py` is the single loader for `manuscript/config.yaml` → `experiment:` | Direct unit tests for pure logic; integration tests for generated artifacts |
-| **`scripts/` — Orchestrators** | `scripts/optimization_analysis.py`, `scripts/build_dashboard.py`, `scripts/z_generate_manuscript_variables.py`, `scripts/generate_api_docs.py`, `scripts/00_preflight.py` | CLI compatibility wrappers and script entry points | No experiment, plotting, dashboard, or manuscript-variable logic lives only in scripts; `00_preflight` and `generate_api_docs` are AESTHETIC | Subprocess/integration tests exercise real commands |
-| **`infrastructure/` — Cross-Cutting** | `infrastructure/scientific/`, `infrastructure/reporting/`, `infrastructure/rendering/`, `infrastructure/core/`, `infrastructure/validation/` | Stability checks, benchmarking, PDF rendering, structured logging, progress bars | Generic reusable behavior only; no project-specific assumptions | Covered by separate `tests/infra_tests/` suite |
-
-## Strict Dependency Direction
+## Layers and dependency direction
 
 ```
-scripts/ ──→ src/            (imports and calls project behavior)
-src/optimizer.py ──→ [stdlib + numpy only]
-src/analysis/ ──→ infrastructure/ (project-specific generation via reusable services)
-src/benchmark_support.py ──→ infrastructure.benchmark (declared adapter)
-tests/   ──→ src/            (direct testing of importable project behavior)
-tests/   ──→ scripts/        (CLI compatibility smoke tests)
+scripts/  (thin: sys.path bootstrap + argv forwarding)
+   │  calls
+   ▼
+src/bond_orchestrator/  (pure core: protocol, graph, runner, missions,
+   │                     providers, provenance, manuscript_variables, cli)
+   │
+   ▼
+stdlib + pyyaml only — NO infrastructure.* imports, ever
 ```
 
-No arrows go upward. Core mathematical code stays independent; project analysis modules may call infrastructure because they are the importable implementation behind the thin script wrappers.
+The dependency arrow is one-directional: `scripts/` → `src/`; `tests/` →
+`src/`. Nothing imports upward. The pure core is standalone-clean:
+copy-pasteable into any Python environment (this is what makes the
+bond-api/bond-utilities integration points trivial later).
 
-```mermaid
-graph TD
-    YAML[manuscript/config.yaml] -->|experiment:| CFG[src/experiment_config.py]
+## The mission DAG
 
-    A[scripts/optimization_analysis.py] -->|delegates| A2[src/analysis/]
-    A2 -->|reads| CFG
-    A2 -->|pure math calls| B[src/optimizer.py]
-    A2 -->|figures| FIG[src/figures/]
-    FIG -->|reads| CFG
-    FIG --> B
+A `Mission` (`src/bond_orchestrator/protocol.py`) is an ordered collection of
+`MissionPackage`s. Each package declares `depends_on` — package ids whose
+recon outputs feed its recon. `build_film_graph()`
+(`src/bond_orchestrator/graph.py`) validates (no self-dependency, no unknown
+nodes, acyclic) and produces a `FilmGraph`. Execution order is the
+**deterministic topological order**: Kahn's algorithm with a sorted
+ready-worklist, so the order is canonical for a given package set regardless
+of declaration order.
 
-    DB[scripts/build_dashboard.py] --> DASH[src/dashboard.py]
-    DASH -->|reads| CFG
+## The five-phase lifecycle
 
-    I[scripts/z_generate_manuscript_variables.py] -->|calls| I2[src/manuscript_variables.py]
-    I2 -->|reads| CFG
-    I2 -->|reads| J[output/data/]
-    I2 -->|writes| K[output/manuscript/]
+`MissionRunner.run()` (`src/bond_orchestrator/runner.py`) executes
+**phase-major, package-minor**:
 
-    L[tests/test_optimizer.py] -->|unit tests| B
-    M[tests/test_analysis_integration.py] -->|integration| A2
-    MAC[tests/test_analysis_coverage.py] -->|branch coverage| A2
-    TSS[tests/test_scripts_smoke.py] -->|AESTHETIC CLI| PF[scripts/00_preflight.py]
-    TSS --> GD[scripts/generate_api_docs.py]
-    TDOC[tests/test_documentation.py] -->|unit tests| DOC[src/documentation.py]
-
-    B --> N((No imports from this repo))
+```
+for phase in (brief, recon, plan, execute, debrief):
+    for package_id in graph.topological_order():
+        run_step(phase, package_id)          # or replay from checkpoint
 ```
 
-## Infrastructure Modules Used by This Project
+One `MissionContext` accumulates recon reports; a downstream package's `recon`
+reads its dependencies' `outputs` (DAG edge semantics), and `plan` /
+`execute` / `debrief` see the full recon picture. Execution is sequential and
+deterministic; the topological order is what makes a later parallel
+implementation safe.
 
-| Module | Imported From | Used For |
-|---|---|---|
-| `infrastructure.scientific.stability` | `src/analysis/` | `check_numerical_stability()` across starting-point / step-size grid |
-| `infrastructure.scientific.benchmarking` | `src/analysis/` | `benchmark_function()` across problem dimensions |
-| `infrastructure.benchmark` | `src/benchmark_support.py` | Score deterministic benchmark facts; wall-clock observations stay runtime-only |
-| `infrastructure.core.logging.utils` | `scripts/*.py` | `get_logger(__name__)` for structured log output |
-| `infrastructure.core.progress` | `src/analysis/` | `ProgressBar` progress bars for long-running loops |
-| `infrastructure.reporting` | `src/analysis/`, `src/dashboard.py` | HTML dashboard generation, pipeline metrics |
-| `infrastructure.validation` | `src/analysis/` | Output integrity checks on generated figures and CSV |
+The consolidated `MissionReport` carries every phase's records in topological
+order plus `consolidated_debrief()` — the single debrief per mission.
 
-## Forbidden Patterns
+## Checkpoint / resume schema
 
-| Pattern | Why It Is Forbidden | Correct Alternative |
-|---|---|---|
-| Math inside `scripts/` (e.g., gradient update step) | Cannot be unit-tested without running the full script | Move to `src/`, add a test in `TestGradientDescent` |
-| `from infrastructure import ...` in `src/optimizer.py` | Breaks mathematical-layer purity | Keep optimizer primitives pure; call infrastructure from `src/analysis/` or `src/dashboard.py` |
-| `print()` inside `scripts/` | Bypasses structured logging; lost in CI output | Use `get_logger(__name__).info(...)` |
-| Hardcoded absolute output paths in pure math modules | Makes copied projects brittle | Keep paths relative to the project root and isolated to analysis/dashboard/manuscript-variable modules |
-| `unittest.mock`, `MagicMock`, `@patch` in `tests/` | Zero-mock policy | Compute real results with real numpy arrays |
-| Hardcoded step-size constants in `scripts/` or duplicate YAML parsing in `src/` | Configuration drift vs `manuscript/config.yaml` | Use `load_experiment_config()` from `src/experiment_config.py` |
+```
+<checkpoint_dir>/<mission>/
+├── manifest.json                     # {"mission": ..., "steps": [sorted step ids]}
+├── <phase>_<package>.json            # {"step", "phase", "package", "payload": ...}
+└── report.json                       # full MissionReport at completion
+```
 
-## How to Add a New Algorithm
+Resume: steps present in the manifest are replayed from their step files
+(recon reports restored into the context), then execution continues from the
+last completed step. Delete the state dir to force a fresh run.
 
-Follow these five steps in order:
+## Provenance
 
-1. **Add the function to `src/optimizer.py`** — Pure math only; no I/O; add type hints and a Google-style docstring; export from `__init__.py`.
+`src/bond_orchestrator/provenance.py` — one `ProvenanceRecord` per executed
+plan step and per debrief: deterministic run id (sha256 over mission name +
+package ids), orchestrator identity (BOND-ORCHESTRATOR / DAG 00), schema
+version, package/provider/phase/outcome/detail, artifact refs, metrics.
+Written as `outcomes.json` + flat `provenance.csv`. This is the
+mission_io-equivalent until `bond-utilities` ships.
 
-2. **Write a test class in `tests/test_optimizer.py`** — Follow the zero-mock pattern; use fixed numpy arrays; assert mathematical properties; run `uv run pytest projects/working/bond/bond-orchestrator/tests/ --cov=projects/working/bond/bond-orchestrator/src --cov-fail-under=90`.
+## Missions and providers
 
-3. **Add the analysis call in `src/analysis/`** — Import the new function from `src/optimizer.py`; run it inside the existing experiment loop or add a new loop; write results to `projects/working/bond/bond-orchestrator/output/data/` or `output/figures/`.
+- `src/bond_orchestrator/missions.py` — the registry: OPERATION OMNIBUS
+  (chain), OPERATION DIAMOND (diamond), OPERATION SINGLET.
+- `src/bond_orchestrator/providers.py` — deterministic reference providers
+  (real classes implementing the real protocol, fixed spec). Registry keys
+  are package ids for the reference missions; real film packages will bind
+  via an entry-point registry later.
 
-4. **Update output conventions** — Document the new output file in `docs/output_conventions.md`; generated `output/` files stay untracked.
+## Manuscript variables
 
-5. **Update manuscript section** — Edit `manuscript/02_methodology.md` with the algorithm description using concrete file paths (e.g., `projects/working/bond/bond-orchestrator/src/optimizer.py::new_function()`); add any result variables to `src/manuscript_variables.py::generate_variables()`; reference figures with `\ref{fig:label}`.
+`src/bond_orchestrator/manuscript_variables.py::generate_variables()` reads
+`manuscript/config.yaml` (identity + mission parameters) and, when present,
+`output/data/mission_report.json` (measured results), producing the
+`{{TOKEN}}` map. Strict mode raises when the report is absent; `--allow-draft`
+uses `"N/A"` fallbacks. Prose never hand-authors metrics.
+
+## CLI
+
+`src/bond_orchestrator/cli.py` — `run <mission> [--checkpoint-dir DIR]
+[--output-dir DIR]`, `list`. `run` persists `mission_report.json` +
+provenance and prints the consolidated debrief; exit code 0 iff all verdicts
+pass.
+
+## Adding a new module
+
+1. Pure logic belongs in `src/bond_orchestrator/` — no infrastructure
+   imports, full type hints, docstrings.
+2. I/O-bearing logic must go through the runner's checkpoint layer, the
+   provenance writer, or the manuscript-variables writer — not raw I/O
+   scattered in providers.
+3. Scripts stay thin; test the new module with real deterministic providers;
+   keep ≥90% line+branch coverage.
+4. Update `docs/AGENTS.md` inventory, `README.md`, and `TODO.md` if the
+   public surface changes.

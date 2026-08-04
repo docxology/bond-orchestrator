@@ -1,0 +1,15 @@
+{
+  "package": "goldeneye",
+  "payload": {
+    "assessment": "EMP resilience mapped; uplink relays hardened.",
+    "metrics": {
+      "shield_rating": 0.87,
+      "uplink_redundancy": 2.0
+    },
+    "package_id": "goldeneye",
+    "provider": "goldeneye",
+    "verdict": "pass"
+  },
+  "phase": "debrief",
+  "step": "debrief:goldeneye"
+}

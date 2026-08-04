@@ -1,25 +1,22 @@
 conditions:
-  - name: conservative_step
+  - name: omnibus_chain
     role: reference
-    description: "Stable gradient-descent step below the spectral bound."
-  - name: near_optimal_step
+    description: "OPERATION OMNIBUS — three-package chain (goldfinger -> goldeneye -> no_time_to_die) with dependency-edge recon feed."
+  - name: diamond_join
     role: proposed
-    description: "Template-recommended step near the stable convergence region."
-  - name: aggressive_step
+    description: "OPERATION DIAMOND — two independent leaves (thunderball, from_russia_with_love) feeding one join (spectre); exercises parallel-safe DAG shape."
+  - name: singleton
     role: variant
-    description: "Stress condition near or above the stability boundary."
+    description: "OPERATION SINGLET — single-package mission; baseline for runner overhead."
 metrics:
   primary:
-    name: objective_value
-    direction: minimize
-protocol: "Run the deterministic quadratic optimization sweep with identical initialization, seeds, tolerance, and iteration cap across all declared step-size conditions."
-expected_figures:
-  - fig:convergence_plot
-  - fig:performance_benchmark
-  - fig:step_size_sensitivity
+    name: execution_order_correctness
+    direction: maximize
+protocol: "Run each canned mission with the deterministic reference providers (no RNG, no wall-clock); assert canonical topological order, consolidated debrief, byte-determinism across two runs, and checkpoint/resume identity."
+expected_figures: []
 expected_tables:
-  - tbl:optimization_results
+  - tbl:mission_parameters
 baselines:
-  - conservative_step
+  - omnibus_chain
 ablations:
-  - aggressive_step
+  - singleton

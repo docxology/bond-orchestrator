@@ -1,83 +1,57 @@
-# Methodology {#sec:methodology}
+# Methodology
 
-This section describes the implementation methodology, explicitly detailing how the optimization algorithms are constructed, validated, and analyzed using the Generalized Research Template's `infrastructure` and `tests` ecosystems.
+## 2.1 The mission DAG
 
-## Algorithm Implementation
+A mission is an ordered collection of film packages
+(`src/bond_orchestrator/protocol.py::Mission`). Each package declares
+`depends_on`, the set of package ids whose recon outputs feed its own recon.
+`build_film_graph()` (`src/bond_orchestrator/graph.py`) turns that declaration
+into a directed acyclic graph with an edge `(upstream, downstream)` for every
+dependency, validating that:
 
-### Gradient Descent Algorithm
+1. no package depends on itself,
+2. every dependency names a package inside the mission,
+3. the graph is acyclic.
 
-The core algorithm implements the iterative procedure for unconstrained optimization. The [`optimizer` module](https://github.com/docxology/template/blob/main/projects/working/bond/bond-orchestrator/src/optimizer.py) uses the standard-library `logging` logger for optional verbose diagnostics; the [analysis orchestrator](https://github.com/docxology/template/blob/main/projects/working/bond/bond-orchestrator/scripts/optimization_analysis.py) uses `infrastructure.core.logging.utils.get_logger`. Tests run under the hermetic boundaries defined in the [test configuration](https://github.com/docxology/template/blob/main/projects/working/bond/bond-orchestrator/tests/conftest.py).
+Execution order is the **deterministic topological order** of the DAG: Kahn's
+algorithm with a sorted ready-worklist, so the result is canonical for a given
+set of packages regardless of declaration order [@kahn1962topological;
+@cormen2009introduction]. The current flagship mission,
+{{CONFIG_MISSION_NAME}}, declares {{CONFIG_NUM_PACKAGES}} packages and is
+therefore executed in exactly one valid topological order.
 
-**Algorithm — Gradient Descent (implemented in the [optimizer module](https://github.com/docxology/template/blob/main/projects/working/bond/bond-orchestrator/src/optimizer.py#L87-L173))**
+## 2.2 The five-phase lifecycle
 
-> **Input:** Initial point $x_0$, step size $\alpha$, tolerance $\epsilon$, max iterations $N_{\max}$
->
-> 1. Initialize $k \leftarrow 0$
-> 2. **While** $k < N_{\max}$ **do:**
->    - Compute gradient $g_k = \nabla f(x_k)$
->    - **If** $\|g_k\|_2 < \epsilon$ **then return** $x_k$ *(converged)*
->    - Update: $x_{k+1} \leftarrow x_k - \alpha \cdot g_k$
->    - $k \leftarrow k + 1$
-> 3. **Return** $x_k$ *(max iterations reached)*
+Every provider implements the `MissionProvider` protocol
+(`src/bond_orchestrator/protocol.py`): **{{CONFIG_PHASES}}**. The runner
+(`src/bond_orchestrator/runner.py::MissionRunner`) executes phase-major,
+package-minor: for each phase, every package runs in topological order,
+sharing one `MissionContext` that accumulates recon reports. A downstream
+package's `recon` therefore reads its dependencies' `outputs` (the DAG edge
+semantics), and `plan`/`execute`/`debrief` see the full recon picture.
 
-## Infrastructure Integration
+Execution is sequential and deterministic; the topological order is exactly
+what makes a later parallel implementation safe, because every dependency's
+outputs are guaranteed present before a consumer runs.
 
-The methodology explicitly bridges theoretical mathematics with production-grade validation through the `infrastructure.scientific` module.
+## 2.3 Checkpoint / resume
 
-### Numerical Stability Analysis
+When a `checkpoint_dir` is supplied, every completed `(phase, package)` step
+is persisted as `<checkpoint_dir>/<mission>/<phase>_<package>.json` with a
+`manifest.json` tracking completed steps in order. Re-running the same mission
+with the same checkpoint dir replays completed steps (recon reports are
+restored into the context so downstream steps see identical inputs) and
+resumes from the last completed step. This follows the standard
+checkpoint/rollback-recovery pattern for long-running distributed work
+[@elnozahy2002survey], specialised here for deterministic single-node
+execution.
 
-Rather than writing ad-hoc validation code, the project imports `infrastructure.scientific.stability.check_numerical_stability`. This utility subjects the objective function to a barrage of extreme inputs (NaN, Inf, $\pm 10^{10}$) to calculate a formalized stability score. If this score degrades, the [analysis orchestrator](https://github.com/docxology/template/blob/main/scripts/pipeline/stage_02_analysis.py) execution deliberately aborts, ensuring the methodology cannot enter unrecoverable states.
+## 2.4 Provenance
 
-### Performance Benchmarking
-
-The analysis exercises [`infrastructure.scientific.benchmarking.benchmark_function`](https://github.com/docxology/template/blob/main/infrastructure/scientific/benchmarking.py) as a runtime diagnostic. Host-dependent timing and memory observations are logged but excluded from tracked evidence. The canonical report records fixed inputs and exact objective values, while the dimensional figure reports deterministic convergence iterations and the proxy $d \times \text{iterations}$; neither surface claims that one host run proves an asymptotic bound.
-
-## Convergence Analysis
-
-For quadratic functions $f(x) = \frac{1}{2}x^T A x - b^T x$ where $A$ is positive definite, the convergence factor becomes [@bertsekas1999nonlinear]:
-
-\begin{equation}
-\label{eq:convergence_factor}
-\rho = \frac{|\lambda_{\max} - \alpha\lambda_{\min}|}{|\lambda_{\min} + \alpha\lambda_{\max}|}
-\end{equation}
-
-Optimal convergence occurs when $\alpha = \frac{2}{\lambda_{\min} + \lambda_{\max}}$, yielding $\rho = \frac{\kappa - 1}{\kappa + 1}$.
-
-## Experimental Setup
-
-### Step Size Analysis
-
-Step sizes are not chosen ad hoc in the manuscript: they are read from `experiment.step_sizes` in `manuscript/config.yaml` and passed through `run_convergence_experiment()` in `src/analysis/` (entry: `scripts/optimization_analysis.py`). The active grid for this build is:
-
-{{CONFIG_STEP_SIZES_BULLETS}}
-
-Labels follow the same agency taxonomy used for plot colours (`_agency_category` in the analysis script): **conservative** (small $\alpha$, slow but stable on $H=I$), **near-optimal** (including $\alpha=1$ where the method reaches $x^\ast$ in one step for this quadratic), **aggressive** ($1 < \alpha < 2$, still linearly contracting in $|x-x^\ast|$ but oscillatory in sign), and **divergent** ($|1-\alpha| \geq 1$).
-
-### Zero-Mock Testing Methodology
-
-The most critical aspect of the project's methodology is its validation framework. The project is governed by a strict Zero-Mock testing policy, evaluated actively by executing `uv run pytest projects/working/bond/bond-orchestrator/tests/` during the infrastructure build phase.
-
-1. **Project tests**: [`projects/working/bond/bond-orchestrator/tests/test_optimizer.py`](../tests/test_optimizer.py) exercises `src/optimizer.py` (typical, edge, boundary, and pathological inputs including NaN/Inf and zero gradients) and, when infrastructure imports succeed, call into `optimization_analysis.py` helpers—without mocks. Suite size: [`docs/_generated/COUNTS.md`](../../../../docs/_generated/COUNTS.md).
-2. **Infrastructure validation**: The repository-level `tests/infra_tests/` suite validates shared template modules (e.g. pipeline and discovery helpers) independently of this project’s manuscript.
-3. **Coverage Gates**: The [GitHub Actions CI workflow](https://github.com/docxology/template/blob/main/.github/workflows/ci.yml) enforces a mandatory ≥90% statement coverage gate on `projects/working/bond/bond-orchestrator/src/` prior to treating the project as build-green.
-
-### Stopping rule and reporting
-
-`gradient_descent()` terminates when $\|\nabla f(x_k)\|$ falls below `experiment.tolerance`, when $k$ reaches `experiment.max_iterations`, or when an objective, gradient, or update becomes non-finite. The boolean `converged` plus `termination_reason` in exported CSV rows distinguish these outcomes. A non-finite candidate is rejected before it enters `objective_history`, preserving the last finite state for reproducible reporting. Downstream, `scripts/z_generate_manuscript_variables.py` aggregates the CSV into `RESULT_*` placeholders so tables and prose cannot drift from the last analysis run.
-
-### Figure generation contract
-
-Each figure in `03_results.md` maps to a generator in `src/figures/` (`generate_convergence_plot`, `generate_step_size_sensitivity_plot`, `generate_convergence_rate_plot`, `generate_complexity_visualization`, `generate_stability_visualization`, `generate_benchmark_visualization`), orchestrated by `src/analysis/` / `scripts/optimization_analysis.py`. Captions in the markdown intentionally name the function and the key parameters (tolerance lines, grids, dimensions) so reviewers can navigate from PDF to code without inferring hidden defaults.
-
-The same generator writes explicit `metadata.alt_text` for every registered
-figure. The alt text states what the visual encodes and preserves the boundary
-between deterministic observations and host-dependent diagnostics. Run the
-opt-in publication migration gate with
-`--require-figure-accessibility` to verify that every referenced figure has
-this metadata before promotion.
-
-## Analysis Pipeline & LaTeX Integration
-
-The automated analysis script leverages [`infrastructure.core.progress`](https://github.com/docxology/template/blob/main/infrastructure/core/progress.py) (`ProgressBar`, `SubStageProgress`) to orchestrate experiments, collect convergence trajectories, and generate publication-quality visualizations seamlessly.
-
-The research template supports advanced LaTeX customization through the `preamble.md` configuration. This is ingested directly by `infrastructure.rendering.latex_utils.py` and `pdf_renderer.py`, automatically linking compiled PGF plots and BibTeX citations. This automated approach ensures an unbreakable chain of custody from raw algorithmic execution to the final rendered manuscript.
+For every outcome — each executed plan step and each debrief — the runner
+emits a `ProvenanceRecord` (`src/bond_orchestrator/provenance.py`) carrying a
+deterministic run id (sha256 over mission name + package ids), the package and
+provider, the phase, the outcome, artifact references, and numeric metrics.
+Records are written as `outcomes.json` and a flat `provenance.csv`. This is
+the mission_io-equivalent of `bond-utilities`; the integration point is
+tracked in `TODO.md`.

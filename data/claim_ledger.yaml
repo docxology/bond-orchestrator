@@ -1,57 +1,43 @@
 claims:
-  - claim_id: figure-export-dpi
+  - claim_id: omnibus-package-count
     kind: number
-    value: 300
-    source: projects/working/bond/bond-orchestrator/src/viz_config.py plotting defaults (dpi)
+    value: 3
+    source: projects/working/bond/bond-orchestrator/src/bond_orchestrator/missions.py OPERATION_OMNIBUS package count
     source_tier: project_source
     freshness: active
-    artifact_path: output/figures/convergence_plot.png
-  - claim_id: step-size-sensitivity-cap
-    kind: number
-    value: 500
-    source: projects/working/bond/bond-orchestrator/src/sweeps.py sensitivity_sweep max_iter cap
-    source_tier: generated_metric
-    freshness: active
-    artifact_path: output/figures/step_size_sensitivity.png
-  - claim_id: stability-log-lower
-    kind: number
-    value: -6
-    source: projects/working/bond/bond-orchestrator/src/figures/scientific_stability.py stability visualization caption
+    artifact_path: src/bond_orchestrator/missions.py
+  - claim_id: omnibus-execution-order
+    kind: sequence
+    value: "goldfinger -> goldeneye -> no_time_to_die"
+    source: projects/working/bond/bond-orchestrator/src/bond_orchestrator/graph.py topological_order canonical result
     source_tier: project_source
     freshness: active
-    artifact_path: output/figures/stability_analysis.png
-  - claim_id: solution-relative-error-exponent
+    artifact_path: src/bond_orchestrator/graph.py
+  - claim_id: lifecycle-phase-count
     kind: number
-    value: -4
-    source: projects/working/bond/bond-orchestrator/manuscript/03_results.md stated precision threshold
-    source_tier: manuscript_claim
-    freshness: active
-    artifact_path: manuscript/03_results.md
-  - claim_id: stability-log-upper
-    kind: number
-    value: -9
-    source: projects/working/bond/bond-orchestrator/src/figures/scientific_stability.py stability visualization caption
+    value: 5
+    source: projects/working/bond/bond-orchestrator/src/bond_orchestrator/runner.py PHASES tuple
     source_tier: project_source
     freshness: active
-    artifact_path: output/figures/stability_analysis.png
-  - claim_id: benchmark-tolerance-exponent
+    artifact_path: src/bond_orchestrator/runner.py
+  - claim_id: reference-provider-count
     kind: number
-    value: -10
-    source: projects/working/bond/bond-orchestrator/scripts/optimization_analysis.py dimensional benchmark tolerance
+    value: 6
+    source: projects/working/bond/bond-orchestrator/src/bond_orchestrator/providers.py REFERENCE_PROVIDERS registry size
     source_tier: project_source
     freshness: active
-    artifact_path: output/figures/performance_benchmark.png
-  - claim_id: benchmark-min-iterations
+    artifact_path: src/bond_orchestrator/providers.py
+  - claim_id: run-id-length
     kind: number
-    value: 219
-    source: projects/working/bond/bond-orchestrator/manuscript/03_results.md benchmark caption
-    source_tier: manuscript_claim
+    value: 12
+    source: projects/working/bond/bond-orchestrator/src/bond_orchestrator/provenance.py derive_run_id hexdigest prefix
+    source_tier: project_source
     freshness: active
-    artifact_path: output/figures/performance_benchmark.png
-  - claim_id: benchmark-max-iterations
+    artifact_path: src/bond_orchestrator/provenance.py
+  - claim_id: coverage-floor
     kind: number
-    value: 238
-    source: projects/working/bond/bond-orchestrator/manuscript/03_results.md benchmark caption
-    source_tier: manuscript_claim
+    value: 90
+    source: projects/working/bond/bond-orchestrator/pyproject.toml tool.coverage.report fail_under
+    source_tier: project_source
     freshness: active
-    artifact_path: output/figures/performance_benchmark.png
+    artifact_path: pyproject.toml

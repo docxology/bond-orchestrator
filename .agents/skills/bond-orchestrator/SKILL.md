@@ -1,53 +1,50 @@
----
-name: bond-orchestrator
-description: Code-centric optimization research exemplar — gradient descent, convergence analysis, automated figures, dashboard, and publication-quality PDF.
-version: 0.1.0
-author: docxology
-license: MIT
-tags: [exemplar, code, optimization, thin-orchestrator]
----
+# bond-orchestrator skill
 
-# bond-orchestrator
-
-Project-scoped skill for the in-repo exemplar at
-`projects/working/bond/bond-orchestrator/`. Load this when working inside the project.
+Project-scoped skill for the BOND-suite package at
+`projects/working/bond/bond-orchestrator/`. Load this when working inside the
+project.
 
 ## When to Use
 
-- Working inside the `bond-orchestrator` exemplar — running scripts, editing source,
-  or regenerating outputs.
-- Forking this exemplar as the starting scaffold for a new research project.
-- Validating that the exemplar's contracts (thin-orchestrator, layer boundaries,
-  no-mocks testing) still hold after changes.
+- Working inside `bond-orchestrator` — running missions, editing source,
+  regenerating outputs.
+- Extending the BOND suite: implementing `MissionProvider` in a film package
+  or a sibling package.
+- Validating that the package's contracts (pure core, thin scripts,
+  zero-mock tests, determinism) still hold after changes.
 
 ## Quick Reference
 
 ```bash
-# From the repository root
-uv run pytest projects/working/bond/bond-orchestrator/tests --cov=projects/working/bond/bond-orchestrator/src --cov-fail-under=90
-uv run python scripts/pipeline/stage_02_analysis.py --project templates/bond-orchestrator
-uv run python scripts/pipeline/stage_03_render.py --project templates/bond-orchestrator
-uv run python scripts/pipeline/stage_04_validate.py --project templates/bond-orchestrator
-uv run python scripts/pipeline/stage_05_copy.py --project templates/bond-orchestrator
+# From the package directory
+uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run python scripts/run_mission.py list
+uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
+uv run python scripts/generate_manuscript_variables.py
+uv run ruff check src/ scripts/
+uv run mypy src/ scripts/
 ```
 
 ## Pitfalls
 
-- **Keep scripts thin.** Business logic belongs in `src/` or shared
-  `infrastructure/`, not in `scripts/`.
-- **No mocks.** All tests must use real data, real files, and real
-  computation.
-- **Outputs are disposable.** Never hand-edit `output/` — regenerate from
-  source and config.
-- **Keep tracked benchmarks deterministic.** Serialize reproducible inputs,
-  objective values, and checks; keep wall-clock timing as a runtime-only
-  diagnostic.
-- **Run from the repo root.** Commands assume the template monorepo root
-  as working directory unless the child `AGENTS.md` states otherwise.
+- **Keep scripts thin.** Business logic (phases, order, checkpoints,
+  verdicts) belongs in `src/bond_orchestrator/`, not in `scripts/`.
+- **Pure core, no infrastructure.** `src/bond_orchestrator/` must never
+  import `infrastructure.*`; the package runs standalone.
+- **No mocks.** Tests use deterministic fake providers that implement the
+  REAL `MissionProvider` protocol — real classes, no mock framework.
+- **Determinism is load-bearing.** Canonical topological order, pure
+  providers, `sort_keys=True` artifacts, byte-equality tests; no wall-clock
+  or RNG in persisted artifacts.
+- **Outputs are disposable.** Never hand-edit `output/`; regenerate from
+  `scripts/`.
+- **Checkpoint dirs resume by design.** Re-running with the same
+  `--checkpoint-dir` replays completed steps; delete the state dir for a
+  fresh run.
 
 ## Cross-refs
 
-- Project contract: [`AGENTS.md`](../../../AGENTS.md)
-- README: [`README.md`](../../../README.md)
-- TODO: [`TODO.md`](../../../TODO.md)
-- Exemplar roster: [`projects/AGENTS.md`](../../../../../AGENTS.md)
+- Package contract: [`AGENTS.md`](../../../AGENTS.md)
+- Protocol spec: [`docs/protocol.md`](../../../docs/protocol.md)
+- TODO + integration points: [`TODO.md`](../../../TODO.md)
+- Agent rules: [`docs/agent_instructions.md`](../../../docs/agent_instructions.md)

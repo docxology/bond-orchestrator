@@ -1,0 +1,10 @@
+{
+  "package": "no_time_to_die",
+  "payload": {
+    "package_id": "no_time_to_die",
+    "provider": "no_time_to_die",
+    "text": "BRIEF NO TIME TO DIE: develop a bioweapon countermeasure. Objective: develop bioweapon countermeasure."
+  },
+  "phase": "brief",
+  "step": "brief:no_time_to_die"
+}

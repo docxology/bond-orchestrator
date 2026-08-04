@@ -1,179 +1,81 @@
 # Manuscript Syntax Reference (bond-orchestrator)
 
-Project-specific overlay on the canonical [`docs/guides/manuscript-semantics.md`](../../../../docs/guides/manuscript-semantics.md) — read that file first; this file documents the **bond-orchestrator**-specific figure registry, equation labels, and `{{TOKEN}}` table.
+Project-specific overlay for manuscript editing. Repository-wide semantics:
+`docs/guides/manuscript-semantics.md` (template root). This file documents the
+**bond-orchestrator** `{{TOKEN}}` table and citation syntax.
 
 ## Citation Syntax (Pandoc)
 
 ```markdown
 <!-- Single citation -->
-[@knuth1997]
+[@kahn1962topological]
 
 <!-- Multiple citations -->
-[@knuth1997; @cormen2009]
-
-<!-- Citation with locator -->
-[@knuth1997, pp. 42-45]
+[@kahn1962topological; @cormen2009introduction]
 
 <!-- Narrative citation -->
-@knuth1997 showed that...
+@kahn1962topological showed that topological sorting scales to large networks.
 ```
 
-All citation keys must exist in [`references.bib`](references.bib). Pandoc with `--natbib` converts `[@key]` to the right LaTeX cite command automatically; **never** write raw `\cite{}` in Markdown.
+All citation keys must exist in [`references.bib`](references.bib). Pandoc
+with `--citeproc`/`--natbib` converts `[@key]` to the right LaTeX cite
+command; **never** write raw `\cite{}` in Markdown.
 
-## Equation Environments
+## {{VARIABLE}} Token Protocol
 
-```markdown
-<!-- Numbered equation with label (preferred Pandoc-crossref form) -->
-$$
-\nabla f(x) = Ax - b
-$$ {#eq:example_gradient}
+Numeric/identity values **must** use `{{TOKEN}}` syntax — never hand-author
+metrics in prose. The token pipeline:
 
-<!-- Equivalent LaTeX form (also recognised by pandoc-crossref) -->
-\begin{equation}
-\label{eq:example_iteration}
-x_{k+1} = x_k - \alpha \nabla f(x_k)
-\end{equation}
+1. `scripts/run_mission.py OPERATION_OMNIBUS` writes
+   `output/data/mission_report.json` + provenance.
+2. `scripts/generate_manuscript_variables.py` calls
+   `src/bond_orchestrator/manuscript_variables.py::generate_variables()`,
+   which reads `manuscript/config.yaml` + the mission report and writes the
+   full `{TOKEN: value}` map to `output/data/manuscript_variables.json`.
+3. Rendering substitutes every `{{TOKEN}}` in the manuscript templates.
 
-<!-- Reference in text (these eq:example_* labels are illustrative only — the live
-     manuscript labels live in the registry table below) -->
-[@eq:example_gradient] gives the gradient; [@eq:example_iteration] is the iteration.
-```
+Strict mode (default) fails when the mission report is absent; `--allow-draft`
+uses `"N/A"` fallbacks for `RESULT_*` tokens.
 
-Reference equations with `[@eq:label]` (parenthetical) or `@eq:label` (narrative). **Never** use raw LaTeX `\ref` / `\eqref` macros in Markdown source — the Pandoc bracket form renders portably across PDF / HTML.
+### Live token table (authoritative source: `generate_variables()`)
 
-### Equation label registry
-
-| Label | Equation | Source file |
+| Token | Meaning | Source |
 |---|---|---|
-| `{#eq:optimization_problem}` | $\min_x f(x)$ | `01_introduction.md` |
-| `{#eq:gradient_descent_update}` | $x_{k+1} = x_k - \alpha \nabla f(x_k)$ | `01_introduction.md` |
-| `{#eq:convergence_factor}` | $\rho = |\lambda_{\max}-\alpha\lambda_{\min}| / |\lambda_{\min}+\alpha\lambda_{\max}|$ | `02_methodology.md` |
-| `{#eq:scalar_linear_update}` | $x_{k+1}-x^\ast = (1-\alpha)(x_k-x^\ast)$ | `03_results.md` |
-| `{#eq:convergence_bound}` | Per-iteration objective bound | `03_results.md` |
-| `{#eq:error_bound}` | Iterate-error contraction | `03_results.md` |
-| `{#eq:iteration_complexity}` | $k \geq \log\epsilon / \log\rho$ | `03_results.md` |
-| `{#eq:quadratic_objective}` | $f(x) = \tfrac12 x^T A x - b^T x$ | `05_experimental_setup.md` |
+| `CONFIG_TITLE` | Paper title | `config.yaml` → `paper.title` |
+| `CONFIG_SUBTITLE` | Paper subtitle | `config.yaml` → `paper.subtitle` |
+| `CONFIG_VERSION` | Package version | `config.yaml` → `paper.version` |
+| `CONFIG_IDENTITY` | Package identity | `config.yaml` → `identity.name` |
+| `CONFIG_CODENAME` | Codename (DAG 00) | `config.yaml` → `identity.codename` |
+| `CONFIG_FIRST_AUTHOR` | First author name | `config.yaml` → `authors[0].name` |
+| `CONFIG_MISSION_NAME` | Mission name | `config.yaml` → `mission.name` |
+| `CONFIG_NUM_PACKAGES` | Package count | `config.yaml` → `mission.packages` |
+| `CONFIG_PACKAGE_CHAIN` | Package chain (→) | `config.yaml` → `mission.packages` |
+| `CONFIG_PHASES` | Lifecycle phases | `src/bond_orchestrator/runner.py::PHASES` |
+| `RESULT_EXECUTION_ORDER` | Measured order (→) | `output/data/mission_report.json` → `order` |
+| `RESULT_NUM_STEPS` | Executed plan steps | `output/data/mission_report.json` → `executions` |
+| `RESULT_ALL_VERDICTS_PASS` | PASS/FAIL | `output/data/mission_report.json` → `debriefs` |
 
-## Figure References
+The live cross-reference test
+(`tests/test_manuscript_variables.py::test_all_manuscript_tokens_are_generated`)
+fails automatically if a manuscript token has no generator. To add a token:
+add a key to `generate_variables()`, then reference it in a manuscript file.
 
-```markdown
-<!-- Figure with label -->
-![Convergence plot showing objective value vs iteration](../output/figures/convergence_plot.png){#fig:convergence width=80%}
+### Detecting unresolved tokens
 
-<!-- Reference in text -->
-[@fig:convergence] demonstrates...
+```bash
+grep -r "{{" output/manuscript/ 2>/dev/null \
+  && echo "UNRESOLVED TOKENS — re-run scripts/generate_manuscript_variables.py" \
+  || echo "All tokens resolved"
 ```
 
-- Images must exist in `output/figures/` at render time
-- Use `width=` or `height=` to control sizing (prevents float-too-large warnings)
-- Captions are self-contained — they appear in the PDF and as alt text in HTML
+## Equations
 
-### Figure label registry
+This manuscript defines no numbered equations; if one is added, use the
+Pandoc-crossref bracket form `$$...$$ {#eq:label}` and reference with
+`[@eq:label]`. Never use raw `\ref`/`\eqref`.
 
-| Label | PNG filename | Generator in `src/figures/` (orchestrated via `src/analysis/` / `scripts/optimization_analysis.py`) |
-|---|---|---|
-| `{#fig:convergence}` | `output/figures/convergence_plot.png` | `generate_convergence_plot()` |
-| `{#fig:step_sensitivity}` | `output/figures/step_size_sensitivity.png` | `generate_step_size_sensitivity_plot()` |
-| `{#fig:convergence_rate}` | `output/figures/convergence_rate_comparison.png` | `generate_convergence_rate_plot()` |
-| `{#fig:complexity}` | `output/figures/algorithm_complexity.png` | `generate_complexity_visualization()` |
-| `{#fig:benchmark}` | `output/figures/performance_benchmark.png` | `generate_benchmark_visualization()` |
-| `{#fig:stability}` | `output/figures/stability_analysis.png` | `generate_stability_visualization()` |
+## Figures
 
-## Table References
-
-```markdown
-| Step Size | Iterations | Converged |
-|-----------|-----------|-----------|
-| 0.01      | 412       | Yes       |
-
-: Performance comparison across step sizes {#tbl:performance}
-
-<!-- Reference in text -->
-[@tbl:performance] shows...
-```
-
-### Table label registry
-
-| Label | Caption summary | Source file |
-|---|---|---|
-| `{#tbl:opt_results}` | Per-step-size convergence outcomes | `03_results.md` |
-
-## Section Labels
-
-Every H1 in this manuscript carries a `{#sec:<name>}` label so cross-section references (`[@sec:methodology]`) survive reordering:
-
-| File | Section H1 | Label |
-|---|---|---|
-| `00_abstract.md` | Abstract | `{#sec:abstract}` |
-| `01_introduction.md` | Introduction | `{#sec:introduction}` |
-| `02_methodology.md` | Methodology | `{#sec:methodology}` |
-| `03_results.md` | Results | `{#sec:results}` |
-| `04_conclusion.md` | Conclusion | `{#sec:conclusion}` |
-| `05_experimental_setup.md` | Experimental Setup | `{#sec:experimental_setup}` |
-| `06_reproducibility.md` | Reproducibility Certification | `{#sec:reproducibility}` |
-| `07_scope_and_related_work.md` | Scope, Related Work, and Positioning | `{#sec:scope}` |
-| `99_references.md` | References | `{#sec:references}` |
-
-## Preamble Injection
-
-[`preamble.md`](preamble.md) contains the LaTeX packages that Pandoc consumes via `infrastructure.rendering.latex_utils`:
-
-```markdown
----
-header-includes:
-  - \usepackage{amsmath}
-  - \usepackage[capitalise,noabbrev]{cleveref}
-  - \usepackage{natbib}
----
-```
-
-- Preamble is parsed by `infrastructure/rendering/latex_utils.py`
-- Changes to tolerance/hfuzz affect line-breaking globally
-- Do **not** duplicate package imports already in the infrastructure renderer
-
-## BibTeX Entry Format
-
-```bibtex
-@article{knuth1997,
-  author  = {Donald E. Knuth},
-  title   = {The Art of Computer Programming},
-  journal = {Addison-Wesley},
-  year    = {1997},
-  volume  = {1}
-}
-```
-
-- Keys must be lowercase alphanumeric with optional underscores
-- Author names use `{Last, First}` or `{First Last}` format
-- All entries must have at minimum: `author`, `title`, `year`
-
-## Section Numbering
-
-```text
-00_abstract.md             → Abstract (unnumbered in PDF)
-01_introduction.md          → Section 1
-02_methodology.md           → Section 2
-03_results.md               → Section 3
-04_conclusion.md            → Section 4
-05_experimental_setup.md    → Section 5
-06_reproducibility.md       → Section 6
-07_scope_and_related_work.md → Section 7
-99_references.md            → References (Pandoc--natbib bibliography)
-```
-
-Files are assembled in lexicographic order by `infrastructure/rendering/pdf_renderer.py`. The `00_` prefix ensures the abstract renders first; `99_` ensures the references come last.
-
-## Prose Conventions
-
-- No "In summary" or "In conclusion" at section ends (RASP standard)
-- Use active voice for methodology descriptions
-- Use explicit file paths when referencing code: `src/optimizer.py`, not "the optimizer module"
-- Keep paragraphs focused — one idea per paragraph
-
-## See Also
-
-- [`../../../docs/guides/manuscript-semantics.md`](../../../../docs/guides/manuscript-semantics.md) — Repository-wide canonical semantics
-- [`AGENTS.md`](AGENTS.md) — RASP protocol and AI agent constraints
-- [`../docs/rendering_pipeline.md`](../docs/rendering_pipeline.md) — Full rendering flow
-- [`../docs/syntax_guide.md`](../docs/syntax_guide.md) — Complete `{{VARIABLE}}` token reference
-- [`preamble.md`](preamble.md) — Active LaTeX preamble
+The orchestrator manuscript currently defines no figure registry. If figures
+are added, every figure must use the Pandoc image + `{#fig:label}` form and be
+referenced via `[@fig:label]`.
