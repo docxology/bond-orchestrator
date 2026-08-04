@@ -10,3 +10,6 @@ __pycache__/
 
 # Project-local virtualenvs (root .venv is shared)
 .venv/
+
+# build artifacts (setuptools/uv path-dep builds)
+build/
