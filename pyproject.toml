@@ -19,7 +19,14 @@ dependencies = [
     "matplotlib>=3.7.0",
     "pyyaml>=6.0",
     "defusedxml>=0.7.1",
+    "bond-api",
 ]
+
+# Local path dependency so the FROZEN bond-api protocol is importable when
+# binding real film providers (film_providers.py imports it lazily; the pure
+# core stays liftable without it).
+[tool.uv.sources]
+bond-api = { path = "/Users/4d/Documents/GitHub/template/projects/working/bond/bond-api" }
 
 [project.optional-dependencies]
 dev = [

@@ -59,6 +59,12 @@ from .provenance import (
     write_outcome_records,
 )
 from .providers import REFERENCE_PROVIDERS, DeterministicProvider, get_provider
+from .film_providers import (
+    FilmProviderAdapter,
+    FilmProviderError,
+    load_film_providers,
+    load_mission_providers,
+)
 from .runner import (
     PHASES,
     MissionError,
@@ -113,4 +119,8 @@ __all__ = [
     "get_provider",
     "write_mission_report",
     "write_outcome_records",
+    "FilmProviderAdapter",
+    "FilmProviderError",
+    "load_film_providers",
+    "load_mission_providers",
 ]
