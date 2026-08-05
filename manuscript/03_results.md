@@ -67,9 +67,12 @@ film packages were absent, which meant this section's claim went green with no
 evidence behind it in any checkout lacking those packages. Absence is now a
 hard failure — `TestRealFilmEvidenceIsRequired` names this section in its
 failure message — so §3.3 is red whenever its evidence is missing. This was
-verified by repointing the module at an empty tree: 11 of the 15 tests,
-including the presence gate, went red. A fork that cannot supply the film
-packages must delete this section, not silence the tests.
+verified by repointing the module at an empty tree: the presence gate and the
+real-film binding tests went red together. (The count of tests that turn red is
+deliberately not quoted here — it drifts as the suite grows, and a stale figure
+would decay into a false claim about a control that was genuinely run.) A fork
+that cannot supply the film packages must delete this section, not silence the
+tests.
 
 ## 3.4 Provenance
 
