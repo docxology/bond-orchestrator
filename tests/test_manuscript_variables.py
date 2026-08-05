@@ -247,5 +247,53 @@ class TestLiveCrossReference:
             if path.name in ("SYNTAX.md", "AGENTS.md", "README.md"):
                 continue
             referenced.update(TOKEN_PATTERN.findall(path.read_text()))
+        # Non-vacuity: an empty reference set would make the assertion below
+        # pass without checking anything.
+        assert len(referenced) > 10, f"only {len(referenced)} tokens found; the gate would be near-vacuous"
         missing = sorted(referenced - set(generated))
         assert missing == [], f"manuscript tokens without generators: {missing}"
+
+    def test_section_5_4_surface_tokens_match_the_mission_registry(self, project_root: Path) -> None:
+        """§5.4's table values are the registry's, hand-checked against it.
+
+        The oracle is the declared mission registry read directly, not the
+        token producer: OMNIBUS is a 3-package serial chain (2 edges, 3 stages,
+        no concurrency), DIAMOND is 3 packages with two roots joining one sink
+        (2 edges, 2 stages, width 2), SINGLET is one package with no edges.
+        """
+        generated = generate_variables(project_root, require_outputs=False)
+        expected = {
+            "SURFACE_OPERATION_OMNIBUS_PACKAGES": "3",
+            "SURFACE_OPERATION_OMNIBUS_HANDOFF_EDGES": "2",
+            "SURFACE_OPERATION_OMNIBUS_STAGES": "3",
+            "SURFACE_OPERATION_OMNIBUS_MAX_PARALLELISM": "1",
+            "SURFACE_OPERATION_OMNIBUS_CRITICAL_PATH": "3",
+            "SURFACE_OPERATION_DIAMOND_PACKAGES": "3",
+            "SURFACE_OPERATION_DIAMOND_HANDOFF_EDGES": "2",
+            "SURFACE_OPERATION_DIAMOND_STAGES": "2",
+            "SURFACE_OPERATION_DIAMOND_MAX_PARALLELISM": "2",
+            "SURFACE_OPERATION_DIAMOND_CRITICAL_PATH": "2",
+            "SURFACE_OPERATION_SINGLET_PACKAGES": "1",
+            "SURFACE_OPERATION_SINGLET_HANDOFF_EDGES": "0",
+            "SURFACE_OPERATION_SINGLET_STAGES": "1",
+            "SURFACE_OPERATION_SINGLET_MAX_PARALLELISM": "1",
+            "SURFACE_OPERATION_SINGLET_CRITICAL_PATH": "1",
+        }
+        assert {key: generated[key] for key in expected} == expected
+
+    def test_section_5_4_reads_its_numbers_from_tokens_only(self, project_root: Path) -> None:
+        """§5.1 says no metric is hand-authored; §5.4's table must obey it.
+
+        Every table cell in §5.4 is either a token reference or non-numeric
+        text. A bare digit in a data row is the exact defect this replaces.
+        """
+        section = (project_root / "manuscript" / "05_experimental_setup.md").read_text()
+        rows = [
+            line
+            for line in section.splitlines()
+            if line.startswith("| `OPERATION_")  # data rows of the mission-surface table
+        ]
+        assert len(rows) == 3, f"expected 3 mission-surface rows, found {len(rows)}"
+        for row in rows:
+            without_tokens = TOKEN_PATTERN.sub("", row)
+            assert not any(char.isdigit() for char in without_tokens), f"hand-authored number in §5.4 row: {row}"

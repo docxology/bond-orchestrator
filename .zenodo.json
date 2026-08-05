@@ -6,7 +6,7 @@
       "orcid": "0000-0001-6232-9096"
     }
   ],
-  "description": "Source code for bond-orchestrator: A Deterministic Mission DAG Runner (BOND-ORCHESTRATOR, codename DAG 00) — Layer 3 mission DAG runner of the BOND suite, executing multi-package film missions over the MissionProvider protocol with checkpoint/resume and provenance.",
+  "description": "Source code for bond-orchestrator: A Deterministic Mission DAG Runner (BOND-ORCHESTRATOR, codename DAG 00) \u2014 Layer 3 mission DAG runner of the BOND suite, executing multi-package film missions over the MissionProvider protocol with checkpoint/resume and provenance. NOT YET DEPOSITED: this file is a prepared payload for a future first deposit, not a record of one. It declares no related_identifiers because no prior version of this work exists.",
   "keywords": [
     "mission orchestration",
     "DAG scheduling",
@@ -17,13 +17,6 @@
     "reproducible research"
   ],
   "license": "MIT",
-  "related_identifiers": [
-    {
-      "identifier": "10.5281/zenodo.20417136",
-      "relation": "isVersionOf",
-      "scheme": "doi"
-    }
-  ],
   "title": "bond-orchestrator: A Deterministic Mission DAG Runner (BOND-ORCHESTRATOR, codename DAG 00)",
   "upload_type": "software",
   "version": "2.5.2"

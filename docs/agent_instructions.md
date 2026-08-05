@@ -182,9 +182,11 @@ grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ \
     && echo "VIOLATION — pure core imports infrastructure" \
     || echo "Clean — pure core is infrastructure-free"
 
-# 4. No template-scaffold lineage strings
-rg -n "template_code_project" . --glob '!uv.lock' --glob '!.git/**' \
-    || echo "Clean — no lineage strings"
+# 4. Packaging + forked-scaffold-lineage gates (declared-vs-imported runtime
+#    dependencies, relative bond-api path, no exemplar slug in any declared
+#    value or .py source). Replaces an `rg` one-liner that skipped dotfiles
+#    and matched its own text, so it could never report Clean.
+uv run pytest tests/test_packaging.py -q
 
 # 5. No module-scope bond_api import (the pure core must stay liftable)
 grep -rnE "^(from|import) bond_api" src/bond_orchestrator/ \

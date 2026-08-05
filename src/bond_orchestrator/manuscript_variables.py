@@ -16,6 +16,9 @@ from typing import Any, cast
 
 import yaml
 
+from .missions import MISSION_NAMES, MISSIONS
+from .planning import build_stage_plan
+from .protocol import Mission
 from .runner import PHASES
 
 CONFIG_FILENAME = "config.yaml"
@@ -59,6 +62,7 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
         "CONFIG_PACKAGE_CHAIN": " → ".join(packages),
         "CONFIG_PHASES": ", ".join(PHASES),
         "CONFIG_RETRY_MAX_ATTEMPTS": str(retry.get("max_attempts", 1)),
+        **_mission_surface_tokens(),
     }
 
     report_path = project_root / REPORT_RELATIVE_PATH
@@ -99,6 +103,38 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
             }
         )
     return variables
+
+
+def _mission_surface_tokens() -> dict[str, str]:
+    """``SURFACE_<MISSION>_*`` tokens derived from the mission registry itself.
+
+    §5.4 tabulates the three canned missions' package counts, parallelism and
+    critical-path lengths.  Those numbers were hand-typed in the prose, four
+    lines after §5.1 states that no metric is hand-authored.  They are now
+    computed here from :data:`~bond_orchestrator.missions.MISSIONS` and the
+    same :func:`~bond_orchestrator.planning.build_stage_plan` the runner uses,
+    so the table cannot disagree with the registry.
+
+    Returns:
+        For each registered mission ``M``: ``SURFACE_M_PACKAGES``,
+        ``SURFACE_M_HANDOFF_EDGES``, ``SURFACE_M_STAGES``,
+        ``SURFACE_M_MAX_PARALLELISM`` and ``SURFACE_M_CRITICAL_PATH``.
+    """
+    tokens: dict[str, str] = {}
+    for name in MISSION_NAMES:
+        mission: Mission = MISSIONS[name]
+        plan = build_stage_plan(mission)
+        edges = sum(len(package.depends_on) for package in mission.packages)
+        tokens.update(
+            {
+                f"SURFACE_{name}_PACKAGES": str(len(mission.packages)),
+                f"SURFACE_{name}_HANDOFF_EDGES": str(edges),
+                f"SURFACE_{name}_STAGES": str(len(plan.stages)),
+                f"SURFACE_{name}_MAX_PARALLELISM": str(plan.max_parallelism()),
+                f"SURFACE_{name}_CRITICAL_PATH": str(plan.critical_path_length()),
+            }
+        )
+    return tokens
 
 
 def _handoff_tokens(report: dict[str, Any]) -> dict[str, str]:

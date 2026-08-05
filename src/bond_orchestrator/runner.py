@@ -292,7 +292,8 @@ class _RunState:
         (self._step_dir / _step_filename(step_id)).write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
         self._manifest.add(step_id)
         (self._step_dir / MANIFEST_FILENAME).write_text(
-            json.dumps({"mission": self._mission.name, "steps": sorted(self._manifest)}, indent=2) + "\n"
+            json.dumps({"mission": self._mission.name, "steps": sorted(self._manifest)}, indent=2, sort_keys=True)
+            + "\n"
         )
 
     def _load_step(self, phase: str, package_id: str) -> None:

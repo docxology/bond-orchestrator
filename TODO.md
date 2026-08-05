@@ -30,7 +30,7 @@ the next time anyone touches a test.
 
 | # | Integration | Dependency | Status / acceptance criteria |
 | --- | --- | --- | --- |
-| 1 | Real film providers bound via the `film_providers.py` adapter | `bond-api` | **WIRED.** `load_film_providers` / `load_mission_providers` discover and run real films; `tests/test_film_binding.py` drives goldfinger / goldeneye / spectre / no_time_to_die through the runner |
+| 1 | Real film providers bound via the `film_providers.py` adapter | `bond-api` | **WIRED.** `load_film_providers` / `load_mission_providers` discover and run real films; `tests/test_film_binding.py` drives goldfinger / goldeneye / spectre / no_time_to_die through the runner. The module has no `skipif`: if those packages are missing the tests fail rather than skip, so this row cannot read WIRED against an empty tree |
 | 2 | `provenance.py` delegates to `mission_io` | `bond-utilities` | **OPEN.** Acceptance: records written via `bond_utilities.mission_io.record_provenance_outcome`, byte-identical schema, existing provenance tests unchanged and green |
 | 3 | Mission hand-off from the coordinator | `bond-coordinator` | **OPEN.** Acceptance: a coordinator-produced `Mission` (same shape) executes through `MissionRunner` with no orchestrator change |
 | 4 | `protocol.py` re-exports the frozen `bond_api.MissionProvider` instead of mirroring it | `bond-api` | **DEFERRED — not obviously desirable.** The two contracts differ by design: runner-side calls carry `MissionPackage` + `MissionContext`; the frozen protocol carries neither. Adapting is correct; re-export would force DAG concepts into a protocol 27 films already implement. Revisit only if bond-api grows a package-aware variant |
@@ -79,8 +79,23 @@ Until #2 and #3 land, the package runs on its own pure core — no stalls.
 - `ruff check` + `ruff format --check` + `mypy` clean on `src/` and `scripts/`.
 - No module-scope `bond_api` import anywhere in `src/`; the pure core stays
   importable without bond-api installed.
-- Determinism: no wall-clock or RNG in any persisted artifact; two-run
-  byte-equality tests enforce the boundary.
+- Determinism: no wall-clock or RNG in any persisted artifact.
+  `tests/test_determinism_bytes.py` enforces the boundary by running each
+  mission twice into separate dirs and comparing every artifact with
+  `read_bytes()`; it ships a positive control proving the comparison can
+  detect a one-byte difference.
+- Real-film evidence: `tests/test_film_binding.py` has no `skipif`. If the
+  sibling film packages are absent the suite goes RED, because manuscript
+  §3.3 claims real-film binding unconditionally.
+- Packaging honesty: `tests/test_packaging.py` fails if a declared runtime
+  dependency is imported nowhere, if an import is undeclared, if the
+  `bond-api` path source becomes absolute, or if the forked-exemplar slug
+  appears in any declared value or `.py` source.
+- Publication metadata stays empty until a real deposit exists. This package
+  has no DOI, no public repository, and no archived copies; see
+  `STANDALONE.md`.
 - Manuscript metrics injected via `{{TOKEN}}` only — never hand-authored.
+  This includes the §5.4 mission-surface table, whose counts are derived from
+  the mission registry by `_mission_surface_tokens`.
 - The public shapes listed under "Frozen cross-package surfaces" in
   `AGENTS.md` change additively or not at all.

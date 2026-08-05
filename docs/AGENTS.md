@@ -39,7 +39,9 @@ DAG 00). Every document is a constraint, not a suggestion.
 - **Numbers live in one file**: measured counts and percentages belong in
   `_generated/COUNTS.md` and nowhere else; prose describes the gate.
 - **Determinism is load-bearing**: canonical topological order, pure
-  providers, `sort_keys=True` artifacts, byte-equality tests.
+  providers, `sort_keys=True` artifacts, and true byte-equality tests
+  (`tests/test_determinism_bytes.py` — two independent runs into separate
+  dirs, compared with `read_bytes()`, with a positive control).
 - **Zero-mock enforcement**: no `unittest.mock`/`MagicMock`/`@patch`/
   `create_autospec` in `tests/`; deterministic fake providers implement the
   real protocol.
@@ -51,8 +53,12 @@ DAG 00). Every document is a constraint, not a suggestion.
 uv run pytest tests/ --cov=src --cov-fail-under=90 -q          # gate
 grep -r "unittest.mock\|MagicMock\|@patch\|create_autospec" tests/ || echo "Clean"
 grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ || echo "Clean"
-# No leftover exemplar-lineage strings from the template_code_project fork
-rg -n "template_code_project" . --glob '!uv.lock' --glob '!.git/**' || echo "Clean"
+# Packaging + forked-scaffold-lineage gates. This replaced an `rg` one-liner
+# that could never print "Clean": rg skips dotfiles (so it missed the stale
+# .template-export.json, now deleted) and the pattern matched its own text in
+# this file. Scope is documented in the module docstring — declared values and
+# .py sources only, not Markdown prose.
+uv run pytest tests/test_packaging.py -q
 uv run ruff check src/ scripts/
 uv run mypy src/ scripts/
 ```

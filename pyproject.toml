@@ -14,24 +14,39 @@ authors = [
     {name = "Daniel Ari Friedman", email = "daniel@activeinference.institute"}
 ]
 requires-python = ">=3.10"
+# Runtime dependencies are exactly what src/ imports. numpy, matplotlib and
+# defusedxml were inherited from the template_code_project fork and imported
+# nowhere in this package; they were removed rather than left as decoration.
+# tests/test_packaging.py::test_declared_runtime_dependencies_are_imported
+# fails if a declared dependency stops being imported (or an import appears
+# with no declaration), so this list cannot silently drift again.
 dependencies = [
-    "numpy>=1.24.0",
-    "matplotlib>=3.7.0",
     "pyyaml>=6.0",
-    "defusedxml>=0.7.1",
     "bond-api",
 ]
 
 # Local path dependency so the FROZEN bond-api protocol is importable when
 # binding real film providers (film_providers.py imports it lazily; the pure
 # core stays liftable without it).
+#
+# Relative, not absolute: an absolute path pins the package to one machine's
+# home directory and breaks every other checkout. Resolved relative to this
+# pyproject.toml. Gated by tests/test_packaging.py::test_bond_api_source_is_relative.
 [tool.uv.sources]
-bond-api = { path = "/Users/4d/Documents/GitHub/template/projects/working/bond/bond-api" }
+bond-api = { path = "../bond-api" }
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    # tests/test_packaging.py parses this file; tomllib is stdlib only on 3.11+.
+    "tomli>=2.0.0; python_version < '3.11'",
+    # TEST-ONLY, not a dependency of this package's core. tests/test_film_binding.py
+    # imports the sibling film packages straight from their own src/ trees, so this
+    # venv must satisfy *their* imports too; `spectre` imports numpy. Nothing under
+    # bond-orchestrator's own src/ or scripts/ imports it — verified by
+    # tests/test_packaging.py::test_every_third_party_import_is_declared.
+    "numpy>=1.24.0",
 ]
 
 [tool.pytest.ini_options]

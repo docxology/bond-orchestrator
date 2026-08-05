@@ -1,3 +1,10 @@
+# No `doi:` and no `repository-code:` field appears here.
+# This software is UNPUBLISHED: it has never been deposited to Zenodo (or
+# anywhere else) and has no public repository. The previously declared DOI
+# 10.5281/zenodo.20417136 resolves to a different work ("Convergence Analysis
+# of Gradient Descent Optimization") and https://github.com/docxology/bond-orchestrator
+# returns 404; both were inherited from the template_code_project exemplar.
+# Add these fields only once a real deposit exists.
 authors:
 - affiliation: Active Inference Institute
   family-names: Friedman
@@ -5,7 +12,6 @@ authors:
   orcid: 0000-0001-6232-9096
 cff-version: 1.2.0
 date-released: '2026-08-04'
-doi: 10.5281/zenodo.20417136
 keywords:
 - mission orchestration
 - DAG scheduling
@@ -15,8 +21,7 @@ keywords:
 - provenance
 - reproducible research
 license: MIT
-message: If you use this software, please cite it using the metadata from this file.
-repository-code: https://github.com/docxology/bond-orchestrator
+message: If you use this software, please cite it using the metadata from this file. It is unpublished and has no DOI.
 title: "bond-orchestrator: A Deterministic Mission DAG Runner (BOND-ORCHESTRATOR, codename DAG 00)"
 type: software
 version: 2.5.2

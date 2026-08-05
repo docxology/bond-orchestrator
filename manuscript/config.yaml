@@ -22,30 +22,44 @@ authors:
     affiliation: "Active Inference Institute"
     corresponding: true
 
+# PUBLICATION STATUS: UNPUBLISHED.
+#
+# This package has never been deposited, released, or hosted anywhere. It has
+# no DOI, no standalone public repository, and no archival copies. Every field
+# below is therefore empty on purpose — an empty field is the honest value.
+#
+# The previous contents of this block were inherited verbatim from the
+# `template_code_project` exemplar this package was forked from, and pointed at
+# that exemplar's artifacts, not this one. Specifically:
+#   - DOI 10.5281/zenodo.20417136 resolves to "Convergence Analysis of Gradient
+#     Descent Optimization" (a different work by the same author);
+#   - https://github.com/docxology/bond-orchestrator returns 404;
+#   - the declared netlify deployment serves that same gradient-descent paper,
+#     and TestPyPI has no `bond-orchestrator` release.
+# Do not repopulate any field here until a real deposit exists and its
+# identifier has been checked against the live registry.
 publication:
-  doi: "10.5281/zenodo.20417136" # Concept DOI — stable citation; cover page and CITATION.cff
-  version_doi: "10.5281/zenodo.20931934" # Latest Zenodo deposit (updated by publish_project_release.py)
-  version_record: "https://zenodo.org/records/20931934"
-  github_repository: "docxology/bond-orchestrator"
-  repository_url: "https://github.com/docxology/bond-orchestrator"
-  published_artifacts:
-    ipfs_pinata: "https://gateway.pinata.cloud/ipfs/QmSVZF1MisqWeX1C7vFUhcwCkYvZXBuq5TS9MzLFNJJykS"
-    huggingface_hub: "https://huggingface.co/datasets/ActiveInference/bond-orchestrator"
-    osf: "https://osf.io/mcv8j/"
-    pypi: "https://test.pypi.org/project/bond-orchestrator/2.5.2/"
-    netlify: "https://6a4440a789b44ad53f3af09b--tranquil-kleicha-0c9203.netlify.app"
-    github_pages: "https://docxology.github.io/bond-orchestrator/"
-    software_heritage: "https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/docxology/bond-orchestrator"
+  doi: ""
+  version_doi: ""
+  version_record: ""
+  github_repository: ""
+  repository_url: ""
+  published_artifacts: {}
+  # Disabled: transmission bookends render `published_artifacts` into the PDF.
+  # With no artifacts to declare there is nothing truthful to render.
   transmission_bookends:
-    enabled: true
+    enabled: false
     max_prior_releases: 5
     show_steganography: true
   deposit_filename:
     enabled: true
     topic: ""
-  journal: "Journal of Mission Orchestration"
-  volume: "1"
-  pages: "1-12"
+  # No journal: this manuscript has not been submitted to or accepted by any
+  # venue. The previous value ("Journal of Mission Orchestration", vol. 1,
+  # pp. 1-12) named a venue that does not exist.
+  journal: ""
+  volume: ""
+  pages: ""
   year: "2026"
 
 keywords:

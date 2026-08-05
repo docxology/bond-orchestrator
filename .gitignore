@@ -13,3 +13,4 @@ __pycache__/
 
 # build artifacts (setuptools/uv path-dep builds)
 build/
+.template-export.json

@@ -1,9 +1,8 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "identifier": "10.5281/zenodo.20417136",
+  "_publicationStatus": "UNPUBLISHED. No DOI has been minted and no public repository exists, so `identifier` and `codeRepository` are deliberately absent rather than carrying inherited exemplar values. See manuscript/config.yaml for the full record of what was removed and why.",
   "name": "bond-orchestrator: A Deterministic Mission DAG Runner (BOND-ORCHESTRATOR, codename DAG 00)",
-  "codeRepository": "https://github.com/docxology/bond-orchestrator",
   "dateModified": "2026-08-04",
   "license": "MIT",
   "version": "2.5.2",

@@ -5,16 +5,40 @@
 
 ## Publication identity
 
-- Standalone repository: [docxology/bond-orchestrator](https://github.com/docxology/bond-orchestrator)
+- Standalone repository: n/a
 - Config version: `2.5.2`
-- Stable concept DOI: [10.5281/zenodo.20417136](https://doi.org/10.5281/zenodo.20417136)
-- Latest deposited version DOI: [10.5281/zenodo.20931934](https://zenodo.org/records/20931934)
-- Additional declared locations: [github_pages](https://docxology.github.io/bond-orchestrator/), [huggingface_hub](https://huggingface.co/datasets/ActiveInference/bond-orchestrator), [ipfs_pinata](https://gateway.pinata.cloud/ipfs/QmSVZF1MisqWeX1C7vFUhcwCkYvZXBuq5TS9MzLFNJJykS), [netlify](https://6a4440a789b44ad53f3af09b--tranquil-kleicha-0c9203.netlify.app), [osf](https://osf.io/mcv8j/), [pypi](https://test.pypi.org/project/bond-orchestrator/2.5.2/), [software_heritage](https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/docxology/bond-orchestrator)
+- Stable concept DOI: n/a
+- Latest deposited version DOI: n/a
+- Additional declared locations: none declared
 - Metadata source: [`manuscript/config.yaml`](manuscript/config.yaml); citation sidecars live at the project root.
 
 Additional locations are config-declared publication evidence; the central index records whether external GitHub and Zenodo checks were refreshed.
 
 <!-- END:PUBLICATION_INDEX -->
+
+## Publication status: unpublished
+
+`bond-orchestrator` **has not been published, deposited, released, or hosted
+anywhere.** It has no DOI, no standalone public repository, no PyPI or TestPyPI
+release, and no archival copy on Zenodo, OSF, Software Heritage, IPFS,
+Hugging Face, Netlify, or GitHub Pages. It exists only inside the PROJECT BOND
+working tree.
+
+Earlier revisions of this file, `manuscript/config.yaml`, `CITATION.cff`,
+`.zenodo.json`, `codemeta.json`, and `manuscript/references.bib` declared all of
+the above. Every one of those declarations was inherited verbatim from the
+`template_code_project` exemplar this package was forked from and pointed at that
+exemplar's artifacts:
+
+- DOI `10.5281/zenodo.20417136` (and version DOI `...20931934`) resolve to
+  *Convergence Analysis of Gradient Descent Optimization*, a different work.
+- `https://github.com/docxology/bond-orchestrator` returns HTTP 404, as does the
+  declared GitHub Pages site.
+- The declared Netlify deployment serves the gradient-descent paper.
+- TestPyPI has no `bond-orchestrator` project.
+
+They were deleted, not reworded. Do not restore any of them until a real deposit
+exists and its identifier has been checked against the live registry.
 
 ## Purpose
 
@@ -32,21 +56,10 @@ deterministic providers, and project-local tests.
 
 ## Clean Copy Command
 
-From the template repository root:
-
-```bash
-uv run python scripts/audit/copy_exemplar.py \
-  --source templates/bond-orchestrator \
-  --dest projects/working/my_code_project \
-  --new-name my_code_project
-```
-
-Fallback when the helper is unavailable:
-
 ```bash
 rsync -a \
   --exclude '.venv/' --exclude '.pytest_cache/' --exclude '.ruff_cache/' \
-  --exclude 'htmlcov/' --exclude 'output/' --exclude 'rendered/' --exclude '*.egg-info/' \
+  --exclude 'build/' --exclude 'htmlcov/' --exclude 'output/' --exclude '*.egg-info/' \
   projects/working/bond/bond-orchestrator/ projects/working/my_code_project/
 ```
 
@@ -54,37 +67,60 @@ rsync -a \
 
 - Update `manuscript/config.yaml`, `domain_profile.yaml`, `experiment_plan.yaml`,
   `CITATION.cff`, `.zenodo.json`, `codemeta.json`, and `pyproject.toml`.
+- Leave every `publication:` field empty until a real deposit exists. Copying a
+  DOI or repository URL forward from the source package is exactly the defect
+  documented above.
 - Replace the mission registry, providers, and manuscript variables with the
   fork's orchestration code.
+- Repoint `[tool.uv.sources].bond-api` (a relative path to the sibling
+  `bond-api` package) or drop it if the fork does not bind real film packages.
 - Regenerate mission outputs before updating manuscript result claims.
 
 ## Validation Commands
 
-From the template repository root after copying into `projects/working/`:
+These are the commands this package actually ships; each one names a file that
+exists in this tree.
 
 ```bash
-uv run pytest projects/working/my_code_project/tests/ \
-  --cov=projects/working/my_code_project/src --cov-fail-under=90
-uv run python projects/working/my_code_project/scripts/optimization_analysis.py
-uv run python projects/working/my_code_project/scripts/z_generate_manuscript_variables.py
+cd projects/working/bond/bond-orchestrator
+
+# Enforced gate: tests + >=90% line+branch coverage on src/
+uv run pytest tests/ --cov=src --cov-fail-under=90
+
+# Regenerate the flagship mission run and its provenance
+uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
+
+# Hydrate manuscript tokens from that run (strict by default)
+uv run python scripts/generate_manuscript_variables.py
+
+# Honesty gates: forked-lineage strings, declared-vs-imported dependencies,
+# and the presence of the real film packages the manuscript cites
+uv run pytest tests/test_packaging.py -v
 ```
 
-For the public exemplar:
+## Not Standalone: real dependencies of this package
 
-```bash
-uv run pytest projects/working/bond/bond-orchestrator/tests/ \
-  --cov=projects/working/bond/bond-orchestrator/src --cov-fail-under=90
-```
+This package is **not** infrastructure-free and does not claim to be.
 
-## Intentional Non-Standalone Dependencies
-
-Some analysis and documentation helpers intentionally use shared template
-infrastructure. The pure optimizer modules are project-local, but the full
-exemplar is forkable as a project in the broader template repository paradigm,
-not as an infrastructure-free package unless you also replace those adapters.
+- `bond-api` is a declared path dependency (`[tool.uv.sources]`, a relative
+  path to the sibling package). The pure core (`graph`, `planning`, `protocol`,
+  `providers`, `retry`, `runner`, `provenance`, `missions`) never imports it;
+  only `film_providers.py` does, lazily.
+- The real-film tests (`tests/test_film_binding.py`) read the sibling
+  `goldfinger/`, `goldeneye/`, `spectre/`, and `no_time_to_die/` package trees
+  directly. They are the sole evidence for manuscript §3.3 and they **fail
+  loudly** — they do not skip — when those packages are absent. A fork that
+  drops them must also drop the §3.3 claim.
+- Manuscript rendering (PDF/HTML/slides) is performed by the surrounding
+  template repository's `infrastructure/`, not by this package.
 
 ## What Not To Claim
 
-Do not claim new optimization results from a renamed fork until
-`output/data/optimization_results.csv`, figures, validation reports, and
-manuscript variables have been regenerated from the forked code.
+- Do not claim any publication, DOI, archive, or release for this package. It
+  has none. See "Publication status" above.
+- Do not claim new mission results from a renamed fork until
+  `output/data/mission_report.json`, `output/data/provenance/`, and
+  `output/data/manuscript_variables.json` have been regenerated from the forked
+  code by the commands above.
+- Do not claim real-film binding (§3.3) unless `tests/test_film_binding.py`
+  actually ran green against real sibling packages in the same checkout.

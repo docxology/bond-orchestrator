@@ -40,11 +40,43 @@ REAL_FILMS = ("goldfinger", "spectre", "no_time_to_die")
 # The canonical OPERATION OMNIBUS chain, now that all three films are built.
 REAL_OMNIBUS_FILMS = ("goldfinger", "goldeneye", "no_time_to_die")
 
-pytestmark = pytest.mark.skipif(
-    not all((BOND / slug / "src" / slug / "mission.py").is_file() for slug in REAL_FILMS)
-    or not all((BOND / slug / "src" / slug / "mission.py").is_file() for slug in REAL_OMNIBUS_FILMS),
-    reason="real film packages not built yet (Phase 2)",
-)
+#: Every film package this module requires, deduplicated and ordered.
+REQUIRED_FILMS = tuple(sorted(set(REAL_FILMS) | set(REAL_OMNIBUS_FILMS)))
+
+
+def missing_film_packages() -> tuple[str, ...]:
+    """Slugs among :data:`REQUIRED_FILMS` with no ``src/<slug>/mission.py`` on disk."""
+    return tuple(slug for slug in REQUIRED_FILMS if not (BOND / slug / "src" / slug / "mission.py").is_file())
+
+
+# NO module-level skipif.
+#
+# These tests are the sole evidence for manuscript §3.3 ("they are not fixtures
+# standing in for films, they are the films") and for the "REAL film binding —
+# WIRED" rows in AGENTS.md and TODO.md.  A `pytest.mark.skipif` keyed on the
+# presence of the film packages made those claims unfalsifiable: delete the
+# sibling packages and the suite went green with zero real-film evidence, which
+# is exactly the state the claims deny.
+#
+# Instead, absence is a hard failure -- see
+# ``TestRealFilmEvidenceIsRequired::test_required_film_packages_are_present``
+# below, and the fact that every test here calls into the real packages and
+# raises when they are gone.  A fork that cannot supply the film packages must
+# delete this module *and* manuscript §3.3, not silence it.
+
+
+class TestRealFilmEvidenceIsRequired:
+    """The gate that makes §3.3 falsifiable: no films on disk => red suite."""
+
+    def test_required_film_packages_are_present(self) -> None:
+        missing = missing_film_packages()
+        assert REQUIRED_FILMS, "the required-film list is empty; this gate would be vacuous"
+        assert not missing, (
+            f"real film packages missing from {BOND}: {missing}. "
+            "Manuscript §3.3, AGENTS.md and TODO.md claim the orchestrator is wired to REAL "
+            "film packages; without these packages that claim has no evidence. Either restore "
+            "them or delete the claim -- do not skip this test."
+        )
 
 
 def _real_mission() -> Mission:

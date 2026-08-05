@@ -32,11 +32,20 @@ in §2.1.
 
 ## 3.2 Determinism and resumability
 
-Two fresh runs of {{CONFIG_MISSION_NAME}} produced byte-identical
-`MissionReport` serializations (`report.as_dict()`), identical checkpoint
-step files, and identical provenance records. A run interrupted before the
-final debrief resumed from the last completed step and produced a report
-identical to a fresh run — the resumability contract of §2.3 holds.
+Two fresh runs of {{CONFIG_MISSION_NAME}} — executed independently into two
+separate directories — produced byte-identical `report.json`, `manifest.json`,
+checkpoint step files, `outcomes.json` and `provenance.csv`, compared as raw
+bytes rather than as decoded objects (`tests/test_determinism_bytes.py`). The
+same holds for OPERATION DIAMOND and OPERATION SINGLET. A run interrupted
+before the final debrief resumed from the last completed step and produced a
+`report.json` byte-identical to a fresh run's — the resumability contract of
+§2.3 holds.
+
+The byte comparison itself carries a positive control: a companion test
+perturbs one artifact by a single byte and requires the comparison to flag
+exactly that file, so a green result means the writers are deterministic
+rather than that the comparison is blind. Injecting a wall-clock value into
+any persisted record turns the suite red.
 
 ## 3.3 Real-film binding
 
@@ -52,6 +61,15 @@ caught with its ordered path) and the retry policy (a real film wrapped in a
 deterministic call-counting fault recovers within its attempt budget and
 resumes byte-identically). These are `tests/test_film_binding.py`; they are
 not fixtures standing in for films, they are the films.
+
+That module carries no `skipif`. It previously skipped itself when the sibling
+film packages were absent, which meant this section's claim went green with no
+evidence behind it in any checkout lacking those packages. Absence is now a
+hard failure — `TestRealFilmEvidenceIsRequired` names this section in its
+failure message — so §3.3 is red whenever its evidence is missing. This was
+verified by repointing the module at an empty tree: 11 of the 15 tests,
+including the presence gate, went red. A fork that cannot supply the film
+packages must delete this section, not silence the tests.
 
 ## 3.4 Provenance
 
