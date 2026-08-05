@@ -10,10 +10,12 @@ outcome. This is an active BOND phase-1 package under
 
 | Surface | Rule |
 | --- | --- |
-| `src/bond_orchestrator/protocol.py`, `graph.py`, `runner.py`, `missions.py`, `providers.py`, `provenance.py`, `manuscript_variables.py` | Pure core — **no** `infrastructure.*` imports, standalone-clean |
+| `src/bond_orchestrator/` pure core — `protocol.py`, `graph.py`, `planning.py`, `retry.py`, `runner.py`, `missions.py`, `providers.py`, `provenance.py`, `manuscript_variables.py`, `cli.py` | **No** `infrastructure.*` imports and **no** `bond_api` import; standalone-clean and liftable |
+| `src/bond_orchestrator/film_providers.py` | The only module permitted to touch `bond_api`, and only via a **lazy** import inside a function body |
 | `scripts/` | Thin orchestrators (sys.path bootstrap + argv forwarding only) |
 | `tests/` | Real data + real computation; deterministic providers implementing the REAL protocol; **no mocks** |
-| Live counts | Link `docs/_generated/COUNTS.md`; do not hardcode measured test totals or coverage % |
+| Frozen cross-package surfaces | The five `MissionProvider` methods, the `MissionPackage`/`MissionContext` shapes, and the `bond_api` protocol are consumed by `bond-cli`, `bond-coordinator`, and 27 film packages — additive change only |
+| Live counts | Link `docs/_generated/COUNTS.md`; do not hardcode measured test totals or coverage % anywhere else |
 
 Enforced by: `pyproject.toml` coverage gate (≥90% line+branch on `src/`),
 `manuscript/layer_contract.yaml`, and the verification commands below.
@@ -63,7 +65,7 @@ flowchart TB
     P[projects/working/bond/bond-orchestrator]
     P --> SRC[src/bond_orchestrator<br/>Pure core · protocol/graph/planning/retry/runner/missions/providers/film_providers/provenance]
     P --> SC[scripts<br/>run_mission.py · generate_manuscript_variables.py]
-    P --> T[tests<br/>131 tests · no mocks · 97.5% coverage]
+    P --> T[tests<br/>no mocks · ≥90% line+branch gate · counts in docs/_generated/COUNTS.md]
     P --> DOCS[docs<br/>agent_instructions · architecture · protocol · testing_philosophy]
     P --> M[manuscript<br/>config.yaml · 00_abstract..99_references · SYNTAX.md]
     P --> OUT[output<br/>mission_report.json · provenance/ · state/ · manuscript_variables.json]
@@ -104,14 +106,54 @@ print(report.consolidated_debrief())   # single debrief
 - Consult `docs/testing_philosophy.md` before writing/modifying pytest files.
 - Consult `docs/protocol.md` before changing the `MissionProvider` contract.
 
-## Testing
+## Build / test / verify
+
+There is no build step — the package is pure Python plus `pyyaml`. `uv sync`
+installs the dev extras and the local `bond-api` path dependency declared in
+`pyproject.toml` (`[tool.uv.sources]`).
 
 ```bash
-uv run pytest tests/ -v
-uv run pytest tests/ --cov=src --cov-fail-under=90 --cov-report=term-missing
+# Setup
+uv sync
+
+# 1. The enforced gate — tests + ≥90% line+branch coverage on src/
+uv run pytest tests/ --cov=src --cov-fail-under=90
+
+# 2. Lint + format check
+uv run ruff check src/ scripts/ tests/
+uv run ruff format --check src/ scripts/
+
+# 3. Types
+uv run mypy src/          # the required scope
+uv run mypy src/ scripts/ # scripts are typed too and must stay clean
+
+# 4. Focused runs while iterating
+uv run pytest tests/test_film_binding.py -v
+uv run pytest tests/ -k retry -v
+uv run pytest tests/ --cov=src --cov-report=term-missing   # find the gap
 ```
 
-Live test count + measured coverage: `docs/_generated/COUNTS.md`.
+Additional invariant checks (all must report clean):
+
+```bash
+grep -rn "unittest.mock\|MagicMock\|@patch\|create_autospec" tests/ || echo "Clean — no mocks"
+grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ || echo "Clean — pure core"
+grep -rnE "^(from|import) bond_api" src/bond_orchestrator/ || echo "Clean — no module-scope bond_api"
+```
+
+The last one matters: `film_providers.py` imports `bond_api` **inside**
+function bodies. A module-scope import would pass every other gate while
+quietly making the pure core un-liftable.
+
+Regenerating evidence (do this before quoting any output artifact):
+
+```bash
+uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
+uv run python scripts/generate_manuscript_variables.py
+```
+
+Live test count + measured coverage: `docs/_generated/COUNTS.md`. Do not copy
+those figures into any other file.
 
 ## BOND-suite integration (wired in commit 728d8f3)
 

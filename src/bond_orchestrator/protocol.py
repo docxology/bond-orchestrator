@@ -1,10 +1,13 @@
 """MissionProvider protocol and the mission data model (pure core).
 
-This module owns the *real* protocol contract that every film provider
-implements.  It is the orchestrator-side canonical definition; when
-``bond-api`` ships its own ``MissionProvider`` (see ``TODO.md`` integration
-notes), this module re-exports or mirrors that contract so the rest of the
-package never changes.
+This module owns the **runner-side** protocol contract.  It is deliberately
+distinct from the frozen ``bond_api.MissionProvider`` that the 27 film
+packages implement: the runner's calls carry a :class:`MissionPackage` and the
+shared :class:`MissionContext` (it must, to drive a DAG), whereas the frozen
+protocol's calls carry neither.  Neither contract may move — both are consumed
+across package boundaries — so the two are joined by an adapter in
+``film_providers.py`` rather than merged.  See ``TODO.md`` integration point 4
+for why re-export was considered and rejected.
 
 Determinism contract
 --------------------

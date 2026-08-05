@@ -18,6 +18,19 @@ standalone (stdlib + pyyaml). I/O is confined to the runner's checkpoint
 layer, `provenance.py`, and `manuscript_variables.py`. Providers are pure with
 respect to their inputs.
 
+The same boundary applies to `bond_api`, with one carve-out:
+`film_providers.py` may import it, and only from inside a function body.
+
+```python
+# film_providers.py — GOOD (lazy; the pure core still imports without bond-api)
+def recon(self, package, context):
+    from bond_api.protocol import ReconRequest
+    ...
+
+# film_providers.py — BAD (module scope; passes every gate, breaks liftability)
+from bond_api.protocol import ReconRequest
+```
+
 ## Rule 3: Thin Orchestrator
 
 `scripts/` contain only `sys.path` bootstrap + argv forwarding. Mission
@@ -28,7 +41,16 @@ tested.
 
 Reference exact modules/functions in prose: "`src/bond_orchestrator/runner.py::MissionRunner.run`
 executes PHASES in topological order", not "the runner runs things in order".
-Manuscript metrics come from `{{TOKEN}}` hydration — never hand-author numbers.
+
+Manuscript metrics come from `{{TOKEN}}` hydration — never hand-author
+numbers. This is not only about coverage percentages: a value like
+`market_index=0.92` quoted in results prose is a hand-authored metric too, and
+it drifts the moment a provider's spec changes. If §3 needs a number, add a
+generator to `manuscript_variables.py` and cite the token.
+
+Measured counts and percentages live in `docs/_generated/COUNTS.md` and
+nowhere else. Elsewhere, describe the gate ("≥90% line+branch on `src/`") and
+link the counts file.
 
 ## Rule 5: Explicit Paths
 

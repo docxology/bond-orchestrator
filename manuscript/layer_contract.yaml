@@ -2,22 +2,36 @@
 # Enforced by scripts/audit/check_template_drift.py --strict (when run inside
 # the template) and by the zero-mock / coverage gates in pyproject.toml.
 
-# The orchestration core must stay infrastructure-free (copy-pasteable into
-# any Python environment): protocol.py, graph.py, runner.py, missions.py,
-# providers.py, provenance.py.
+# The orchestration core must stay infrastructure-free AND bond-api-free
+# (copy-pasteable into any Python environment with stdlib + pyyaml).
 infrastructure_free_core:
   - src/bond_orchestrator/protocol.py
   - src/bond_orchestrator/graph.py
+  - src/bond_orchestrator/planning.py
+  - src/bond_orchestrator/retry.py
   - src/bond_orchestrator/runner.py
   - src/bond_orchestrator/missions.py
   - src/bond_orchestrator/providers.py
   - src/bond_orchestrator/provenance.py
   - src/bond_orchestrator/manuscript_variables.py
+  - src/bond_orchestrator/cli.py
+
+# The single adapter edge: the only module permitted to reference bond_api,
+# and only through a lazy import inside a function body, so that importing
+# bond_orchestrator never requires bond-api to be installed.
+lazy_bond_api_adapters:
+  - src/bond_orchestrator/film_providers.py
 
 # scripts/ are thin orchestrators (sys.path bootstrap + argv forwarding only).
 thin_scripts:
   - scripts/run_mission.py
   - scripts/generate_manuscript_variables.py
 
-# No module in src/ or scripts/ may import infrastructure.*; the package runs
-# standalone.  When bond-api/bond-utilities land, adapters go here.
+# No module in src/ or scripts/ may import infrastructure.* — the package runs
+# standalone. bond-api is WIRED as a local path dependency (pyproject
+# [tool.uv.sources]) and consumed only through the adapter above.
+# bond-utilities (mission_io provenance delegation) is not yet wired; see
+# TODO.md integration point 2.
+forbidden_module_scope_imports:
+  - infrastructure          # anywhere under src/ or scripts/
+  - bond_api                # anywhere under src/ (function-body import only)

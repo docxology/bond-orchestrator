@@ -92,6 +92,28 @@ class TestRunnerErrors:
     def test_phases_are_stable(self) -> None:
         assert PHASES == ("brief", "recon", "plan", "execute", "debrief")
 
+    def test_uncheckpointable_payload_is_rejected_loudly(self) -> None:
+        """The checkpoint serializer must fail, never write a lossy record.
+
+        Silently dropping an unknown payload would make a resumed run diverge
+        from a fresh one while every gate stayed green, so the writer raises.
+        """
+        from bond_orchestrator.runner import _payload_as_dict
+
+        with pytest.raises(MissionError, match="cannot checkpoint payload of type str"):
+            _payload_as_dict("not a protocol record")
+
+    def test_load_step_without_checkpoint_dir_is_a_no_op(self, omnibus_runner) -> None:
+        """Replay is inert when no state dir is configured (no stray file reads)."""
+        state = _RunState(
+            mission=OPERATION_OMNIBUS,
+            order=OPERATION_OMNIBUS.package_ids(),
+            providers=dict(omnibus_runner._providers),
+            checkpoint_dir=None,
+        )
+        state._load_step("brief", "goldfinger")
+        assert state.report().briefs == ()
+
 
 class TestCheckpointResume:
     def test_resume_replays_without_reexecuting(self, tmp_path) -> None:

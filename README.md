@@ -24,7 +24,7 @@ result is a single consolidated debrief per mission, plus per-outcome
 provenance records. Real film packages built to the frozen `bond-api`
 protocol are bound through the adapter in `src/bond_orchestrator/film_providers.py`.
 
-Five guarantees are enforced by construction:
+Six guarantees are enforced by construction:
 
 - **Order** — canonical topological order (Kahn's algorithm, id tie-break);
   execution order never depends on declaration order.
@@ -87,23 +87,30 @@ output/state/<mission>/                    # checkpoint step files + manifest
 
 ## Architecture
 
+Every module in `src/bond_orchestrator/`, and what it computes:
+
+| Module | What it does |
+|---|---|
+| `protocol.py` | The runner-side mission data model (`Mission`, `MissionPackage`, `MissionContext`, `BriefRecord`, `ReconReport`, `Plan`/`PlanStep`, `ExecutionResult`, `Debrief`) and the `MissionProvider` Protocol. Frozen dataclasses with `as_dict()` for byte-stable serialization. |
+| `graph.py` | Builds the film DAG from `depends_on`, validates it (self-dependency, unknown node, acyclicity), computes the canonical topological order (Kahn's algorithm, sorted worklist), and recovers the ordered cycle path via DFS. |
+| `planning.py` | Wavefront decomposition of the DAG into parallel stages; achievable parallelism (widest stage) and critical path (stage count). |
+| `retry.py` | The bounded, backoff-free retry policy (`RetryPolicy`, `RetryRecord`) and the `should_retry` decision function. Self-validating construction. |
+| `runner.py` | Phase-major, package-minor execution over the topological order; the shared `MissionContext`; checkpoint/resume (manifest + per-step files + report); retry application; `MissionReport` and the consolidated debrief. |
+| `missions.py` | The canned mission registry — the three DAG shapes this package ships. |
+| `providers.py` | Deterministic reference providers: real classes implementing the real protocol with fixed specs. Used by the canned missions and the pure-core tests. |
+| `film_providers.py` | The adapter edge — binds REAL film packages written against the frozen `bond_api.MissionProvider` to the runner-side contract. Strict discovery; `bond_api` imported lazily. |
+| `provenance.py` | One `ProvenanceRecord` per executed step and per debrief; deterministic run id; `outcomes.json` + `provenance.csv` + full-report writers. |
+| `manuscript_variables.py` | The `{{TOKEN}}` map: identity/parameters from `manuscript/config.yaml` plus measured results (order, steps, verdicts, retries, stage plan, DAG hand-off edges) from the mission report. |
+| `cli.py` | Argument parsing and dispatch only: `run`, `plan`, `list`, plus the exit-code rule. |
+
 ```
-src/bond_orchestrator/
-├── protocol.py            # MissionProvider protocol + mission data model (pure)
-├── graph.py               # film DAG + topo sort + ordered cycle-path detection (pure)
-├── planning.py            # parallel-stage plans: parallelism + critical path (pure)
-├── retry.py               # deterministic retry policy + RetryRecord (pure)
-├── runner.py              # phase-major executor + checkpoint/resume + retries (pure)
-├── missions.py            # canned missions: OMNIBUS / DIAMOND / SINGLET (pure)
-├── providers.py           # deterministic reference providers (real protocol impls)
-├── film_providers.py      # adapter binding REAL bond-api film packages (lazy import)
-├── provenance.py          # mission_io-equivalent outcome records (pure)
-├── manuscript_variables.py# {{TOKEN}} hydration from config.yaml + mission report
-└── cli.py                 # thin CLI: `run`, `plan`, `list`
 scripts/
-├── run_mission.py         # thin wrapper → bond_orchestrator.cli.main
+├── run_mission.py                    # thin wrapper → bond_orchestrator.cli.main
 └── generate_manuscript_variables.py  # thin wrapper → generate_variables
 ```
+
+Full module-by-module detail, the composition order of one run, and the
+frozen-surface list: [`docs/architecture.md`](docs/architecture.md).
 
 Layer contract: the pure core (`protocol/graph/planning/retry/runner/missions/
 providers/provenance/manuscript_variables`) never imports `infrastructure.*` or
@@ -129,13 +136,58 @@ class MissionProvider(Protocol):
 
 Full contract documentation: [`docs/protocol.md`](docs/protocol.md).
 
+### Binding a real film package
+
+Film packages implement the **frozen** `bond_api` protocol in their own
+`src/<slug>/mission.py` — narrower signatures (`recon(ReconRequest)`,
+`plan(MissionBrief)`, `execute(MissionPlan)`, `debrief(MissionOutcome)`) that
+carry no DAG concepts at all. `film_providers.py` adapts between the two:
+
+```python
+from pathlib import Path
+from bond_orchestrator import MissionRunner, load_film_providers, load_mission_providers
+
+BOND = Path("projects/working/bond")
+
+# Bind a slug list …
+adapters = load_film_providers(("goldfinger", "goldeneye", "no_time_to_die"), BOND)
+# … or every package a Mission declares:
+adapters = load_mission_providers(my_mission, BOND)
+
+report = MissionRunner(adapters).run(my_mission)
+```
+
+The adapter folds each dependency's recon `outputs` into the goal text the
+film's `recon` receives, and turns the film's `Finding` list back into
+`outputs` for downstream edges — so a DAG-unaware film participates in the
+DAG. Binding is strict: a missing or undiscoverable film raises
+`FilmProviderError` rather than being skipped. `bond_api` is imported lazily,
+so the pure core still runs where bond-api is not installed.
+
+## Verification
+
+Three gates, all runnable from this directory. Coverage must stay at or above
+the `pyproject.toml` floor of 90% line+branch on `src/`; the *measured* figures
+live in [`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md) and are
+deliberately not quoted here, so this file cannot go stale.
+
+```bash
+uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run ruff check src/ scripts/ && uv run ruff format --check src/ scripts/
+uv run mypy src/
+```
+
 ## Documentation
 
 - [`AGENTS.md`](AGENTS.md) — package contract, layer rules, verification
+- [`docs/README.md`](docs/README.md) — the docs hub index
 - [`docs/agent_instructions.md`](docs/agent_instructions.md) — agent rules (read first)
-- [`docs/architecture.md`](docs/architecture.md) — layers, DAG model, checkpoint schema
+- [`docs/architecture.md`](docs/architecture.md) — module inventory, composition order, frozen `bond_api` binding, checkpoint schema, CLI
 - [`docs/protocol.md`](docs/protocol.md) — the MissionProvider protocol spec
-- [`docs/testing_philosophy.md`](docs/testing_philosophy.md) — zero-mock policy, coverage mechanics
+- [`docs/testing_philosophy.md`](docs/testing_philosophy.md) — zero-mock policy, what the stand-ins are, coverage mechanics
+- [`docs/style_guide.md`](docs/style_guide.md) — the seven code/doc style rules
+- [`docs/output_conventions.md`](docs/output_conventions.md) — `output/` layout and regeneration
+- [`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md) — measured counts, coverage split, lint/type results
 - [`TODO.md`](TODO.md) — forward backlog + BOND-suite integration points
 - [`manuscript/`](manuscript/) — publication manuscript (identity: BOND-ORCHESTRATOR, codename DAG 00)
 

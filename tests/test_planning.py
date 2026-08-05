@@ -61,6 +61,23 @@ class TestPlanStages:
         )
         assert build_stage_plan(reversed_mission).as_dict() == build_stage_plan(OPERATION_DIAMOND).as_dict()
 
+    def test_plan_stages_rejects_a_prevalidated_cyclic_graph(self) -> None:
+        """``plan_stages`` guards independently of ``build_film_graph``.
+
+        ``build_stage_plan`` validates acyclicity first, so this branch is
+        only reachable by handing ``plan_stages`` a ``FilmGraph`` constructed
+        directly (the type is a plain frozen dataclass — nothing stops a
+        caller from doing so). Without this test the guard is unexercised and
+        could rot into a hang or a bare ``KeyError``.
+        """
+        from bond_orchestrator.graph import FilmGraph
+
+        cyclic = FilmGraph(nodes=("a", "b"), edges=(("a", "b"), ("b", "a")))
+        with pytest.raises(CycleError) as excinfo:
+            plan_stages(cyclic)
+        assert excinfo.value.cycle == ("a", "b", "a")
+        assert "cannot plan stages" in str(excinfo.value)
+
     def test_cycle_raises_with_path(self) -> None:
         mission = Mission(
             name="OPERATION_LOOP",

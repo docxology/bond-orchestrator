@@ -31,9 +31,14 @@ follow that pattern specialised for deterministic single-node execution.
 Scheduling directed task graphs onto parallel machines by level-by-level
 wavefront decomposition is a classic static-scheduling result
 [@kwok1999static]; the orchestrator's stage plan is its deterministic,
-single-machine specialization. Retrying transient step failures with bounded
-attempts is standard reliability practice; here it is made deterministic by
-removing wall-clock backoff entirely.
+single-machine specialization. Bounded re-execution of a failing step is
+fault tolerance in the dependability sense — masking a transient fault so it
+does not become a system failure, while letting a persistent one surface
+[@avizienis2004basic]; here it is made deterministic by removing wall-clock
+backoff entirely, trading throughput for byte-reproducible artifacts. The
+binding between the runner-side contract and the frozen `bond_api` protocol is
+a textbook object adapter [@gamma1994design]: neither interface may move, so a
+translating wrapper is the only structure that preserves both.
 
 ## 7.3 Integration points
 

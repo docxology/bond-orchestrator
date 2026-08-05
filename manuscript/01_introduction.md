@@ -28,7 +28,28 @@ The guarantees are enforced by construction:
 - **Provenance** — `src/bond_orchestrator/provenance.py` writes one
   provenance record per executed plan step and per debrief, with a
   deterministic run id.
+- **Bounded recovery** — `src/bond_orchestrator/retry.py` re-executes a
+  failing `execute` step a bounded number of times, immediately and without
+  wall-clock backoff, so recovery never costs determinism.
+- **Explicit concurrency** — `src/bond_orchestrator/planning.py` decomposes
+  the DAG into the wavefront stages a parallel executor could run, reporting
+  achievable parallelism and critical path without changing the sequential
+  execution contract.
+- **Real-film binding** — `src/bond_orchestrator/film_providers.py` adapts
+  packages written against the frozen `bond_api.MissionProvider` protocol to
+  the runner-side contract, so the fleet's real films run under all of the
+  above rather than a parallel code path.
 
-The reader's guide: §2 details the DAG model and the five-phase execution
-lifecycle; §3 reports the measured OPERATION OMNIBUS execution; §5 lists the
-configured mission parameters; §6 documents reproducibility.
+Two of those deserve their negative statement up front, because they are what
+the package deliberately does *not* do. It does not sleep between retries: a
+wall-clock delay would leak a non-reproducible quantity into an artifact whose
+byte-stability is the point. And it does not execute packages concurrently:
+concurrency is emitted as a plan and verified as a property, not performed,
+so that the guarantees above hold under a single, auditable execution order.
+
+The reader's guide: §2 details the DAG model, the five-phase lifecycle, the
+retry policy, stage planning, real-film binding, and provenance; §3 reports
+the measured OPERATION OMNIBUS execution and the real-film runs; §4 states
+what the design bought and what it deferred; §5 lists the configured mission
+parameters and the mission shapes under test; §6 documents reproducibility;
+§7 bounds the scope and places the work against prior art.

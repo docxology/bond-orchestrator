@@ -24,6 +24,7 @@ from bond_orchestrator.film_providers import (
     FilmProviderAdapter,
     FilmProviderError,
     load_film_providers,
+    load_mission_providers,
 )
 from bond_orchestrator.graph import CycleError
 from bond_orchestrator.planning import build_stage_plan
@@ -102,6 +103,54 @@ def test_load_real_films() -> None:
 def test_load_missing_film_raises() -> None:
     with pytest.raises(FilmProviderError):
         load_film_providers(("no_such_film_2026",), BOND)
+
+
+def test_load_mission_providers_binds_every_declared_package() -> None:
+    """The CLI-facing convenience binds a whole Mission, not a slug list."""
+    mission = _real_mission()
+    adapters = load_mission_providers(mission, BOND)
+    assert set(adapters) == set(mission.package_ids())
+    assert all(isinstance(adapter, FilmProviderAdapter) for adapter in adapters.values())
+    # Bound adapters actually drive a run — binding is not merely structural.
+    report = MissionRunner(cast(dict[str, MissionProvider], adapters)).run(mission)
+    assert report.order == ("goldfinger", "spectre", "no_time_to_die")
+    assert report.all_verdicts_pass()
+
+
+def test_undiscoverable_film_reports_the_discovery_failure(tmp_path: Path) -> None:
+    """A present-but-malformed ``mission.py`` must surface, never be skipped.
+
+    ``load_film_providers`` is strict by contract: a real-film mission may not
+    silently drop a package. This builds a real film tree whose ``mission.py``
+    exposes no ``MissionProvider`` class, so bond-api's discovery raises and
+    the adapter layer must translate it into ``FilmProviderError``.
+    """
+    slug = "bond_orchestrator_malformed_probe"
+    package_dir = tmp_path / slug / "src" / slug
+    package_dir.mkdir(parents=True)
+    (package_dir / "__init__.py").write_text('"""Malformed probe film package."""\n')
+    (package_dir / "mission.py").write_text('"""No MissionProvider class here on purpose."""\n')
+
+    with pytest.raises(FilmProviderError) as excinfo:
+        load_film_providers((slug,), tmp_path)
+    assert "cannot discover" in str(excinfo.value)
+    assert slug in str(excinfo.value)
+
+
+def test_citation_text_omits_dependencies_with_no_outputs() -> None:
+    """A dependency that produced no recon outputs adds no citation noise."""
+    adapters = load_film_providers(("goldfinger",), BOND)
+    adapter = adapters["goldfinger"]
+    package = MissionPackage(
+        id="goldfinger",
+        title="GOLDFINGER",
+        objective="recon the gold market",
+        depends_on=("never_reconned",),
+    )
+    assert adapter._citation_text(package, MissionContext()) == ""  # noqa: SLF001 - branch under test
+    report = adapter.recon(package, MissionContext())
+    assert report.findings
+    assert not any("cites never_reconned" in finding for finding in report.findings)
 
 
 def test_adapter_phase_contract() -> None:

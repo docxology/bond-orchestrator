@@ -1,11 +1,30 @@
 # The MissionProvider Protocol (bond-orchestrator canonical spec)
 
-This is the protocol contract every film provider implements. It is the
-orchestrator-side canonical definition; when `bond-api` ships its own
-`MissionProvider` (see `TODO.md`), this package re-exports or mirrors that
-contract so the rest of the package never changes.
+This is the **runner-side** provider contract — what `MissionRunner` calls.
 
 Source of truth: `src/bond_orchestrator/protocol.py`.
+
+## Two protocols, one adapter
+
+Do not confuse this with the frozen `bond_api.MissionProvider` that the 27
+film packages implement in their own `src/<slug>/mission.py`. They differ by
+design:
+
+| | Runner-side (this doc) | Frozen `bond_api` |
+|---|---|---|
+| `brief` | `brief(package) -> str` | `brief() -> MissionBrief` |
+| `recon` | `recon(package, context) -> ReconReport` | `recon(ReconRequest) -> ReconReport` |
+| `plan` | `plan(package, context) -> Plan` | `plan(MissionBrief) -> MissionPlan` |
+| `execute` | `execute(package, plan, context) -> tuple[ExecutionResult, ...]` | `execute(MissionPlan) -> MissionOutcome` |
+| `debrief` | `debrief(package, context, plan, results) -> Debrief` | `debrief(MissionOutcome) -> Debrief` |
+| Knows about the DAG | Yes — every call carries `MissionPackage` + `MissionContext` | No — a film knows nothing about other films |
+
+Both are frozen: the `bond_api` protocol is implemented by 27 films and owned
+by `bond-api`; the runner-side shapes are consumed by `bond-cli` and
+`bond-coordinator`. `src/bond_orchestrator/film_providers.py` translates
+between them (see `docs/architecture.md`). Implement this contract when you
+are writing an orchestrator-native provider; implement the frozen one when you
+are writing a film.
 
 ## Data model
 

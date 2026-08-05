@@ -1,10 +1,14 @@
 """Deterministic reference film providers implementing the REAL protocol.
 
 These are real Python classes with fixed, reproducible logic — NOT mocks.  They
-stand in for the film packages (goldfinger, goldeneye, no_time_to_die, ...)
-until those ship their own providers; see ``TODO.md`` for the integration
-points.  Every method is pure with respect to its inputs, which is what makes
-mission runs byte-deterministic.
+back the canned missions in ``missions.py`` and give the pure-core tests a
+provider set that needs no film package installed.
+
+They are *not* a substitute for the real films, which are bound through
+``film_providers.py`` and exercised in ``tests/test_film_binding.py``; both
+provider kinds are interchangeable at the runner's step boundary, which is the
+point of the protocol.  Every method here is pure with respect to its inputs,
+which is what makes mission runs byte-deterministic.
 """
 
 from __future__ import annotations
@@ -20,9 +24,10 @@ from .protocol import (
 )
 from .runner import ProviderNotFoundError
 
-# Registry keys are package ids (for the reference missions every package is
-# served by a provider of the same name).  When real film packages land, the
-# binding moves to an entry-point registry; see TODO.md.
+# Registry keys are package ids: for the reference missions every package is
+# served by a provider of the same name.  Real film packages are bound
+# separately by film_providers.load_film_providers, which resolves them from
+# their own src/ trees rather than from this registry.
 
 
 class DeterministicProvider:

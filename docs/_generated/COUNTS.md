@@ -1,31 +1,77 @@
 # Live Counts — bond-orchestrator
 
 Regenerated whenever the suite changes; never hardcode these numbers in prose
-(they drift faster than the docs touching them).
+(they drift faster than the docs touching them). Everything below was read out
+of an actual gate run — no figure here is estimated or rounded.
 
-## Test suite (measured 2026-08-04, phase-4 build)
+## Test suite (measured 2026-08-04, phase-5 docs + review pass)
 
 | Metric | Value |
 |---|---|
-| Tests passing | 131 |
+| Tests passing | 145 |
 | Tests skipped / failed | 0 / 0 |
-| Line coverage on `src/` | 97.54% |
-| Branch coverage on `src/` | ≥92% |
+| Statements in `src/` | 782 |
+| Statements missed | 0 |
+| Line coverage on `src/` | 100.00% |
+| Branches in `src/` | 170 |
+| Partial branches | 10 |
+| Branch coverage on `src/` | 94.12% |
+| Combined line+branch coverage (the gate's figure) | 98.95% |
 | Coverage floor (`pyproject.toml`) | 90% |
+| Interpreter used for this run | CPython 3.14.6 (darwin) |
 
-Command: `uv run pytest tests/ --cov=src --cov-fail-under=90`
+Commands:
+
+```bash
+uv run pytest tests/ --cov=src --cov-fail-under=90     # the enforced gate
+uv run coverage json -o cov.json                       # for the split figures
+```
+
+The gate prints the combined line+branch figure (98.95%); the split figures
+come from `coverage json`. The prior entry claimed branch coverage "≥92%",
+which was an assertion rather than a measurement — it is now the measured
+94.12%. The 10 partial branches are the `...` bodies of the `MissionProvider`
+Protocol stubs (9) plus one fall-through in checkpoint replay: structural, not
+logic gaps. See `docs/testing_philosophy.md`.
+
+## Lint and types
+
+| Gate | Command | Result |
+|---|---|---|
+| ruff lint | `uv run ruff check src/ scripts/ tests/` | clean |
+| ruff format | `uv run ruff format --check src/ scripts/` | 15 files already formatted |
+| mypy | `uv run mypy src/ scripts/` | no issues in 15 source files |
 
 ## Source surface
 
-- `src/bond_orchestrator/`: protocol, graph, planning, retry, runner,
-  missions, providers, film_providers, provenance, manuscript_variables, cli
-- `scripts/`: run_mission.py, generate_manuscript_variables.py (thin)
+`src/bond_orchestrator/` — 11 modules:
+protocol · graph · planning · retry · runner · missions · providers ·
+film_providers · provenance · manuscript_variables · cli
+
+`scripts/` — 2 thin orchestrators:
+run_mission.py · generate_manuscript_variables.py
+
+`tests/` — 12 test modules:
+test_protocol · test_graph · test_planning · test_retry · test_runner ·
+test_missions · test_cli · test_provenance · test_manuscript_variables ·
+test_integration · test_film_binding · test_scripts_smoke
 
 ## Mission registry
 
 OPERATION_OMNIBUS (goldfinger → goldeneye → no_time_to_die) ·
 OPERATION_DIAMOND (thunderball, from_russia_with_love → spectre) ·
 OPERATION_SINGLET (goldfinger)
+
+## Manuscript tokens
+
+21 tokens generated (11 `CONFIG_*`, 10 `RESULT_*`), cross-checked against
+every rendered manuscript section by
+`tests/test_manuscript_variables.py::TestLiveCrossReference`. Regenerate:
+
+```bash
+uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
+uv run python scripts/generate_manuscript_variables.py
+```
 
 ## CLI
 

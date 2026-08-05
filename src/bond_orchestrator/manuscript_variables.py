@@ -74,6 +74,7 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
                 "RESULT_ALL_VERDICTS_PASS": "PASS" if all_pass else "FAIL",
                 "RESULT_RETRY_COUNT": str(len(cast(list[Any], report.get("retries", [])))),
                 **(_stage_plan_tokens(stage_plan) if stage_plan else _stage_plan_tokens(None)),
+                **_handoff_tokens(report),
             }
         )
     elif require_outputs:
@@ -93,9 +94,49 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
                 "RESULT_MAX_PARALLELISM": "N/A",
                 "RESULT_CRITICAL_PATH_LENGTH": "N/A",
                 "RESULT_STAGE_PLAN": "N/A",
+                "RESULT_NUM_HANDOFF_EDGES": "N/A",
+                "RESULT_HANDOFF_SUMMARY": "N/A",
             }
         )
     return variables
+
+
+def _handoff_tokens(report: dict[str, Any]) -> dict[str, str]:
+    """RESULT_* tokens describing the DAG's measured recon hand-off edges.
+
+    A hand-off edge is a ``(dependency, dependent)`` pair declared by
+    ``depends_on``; its payload is the dependency's *measured* recon
+    ``outputs`` as recorded in the mission report.  Rendering them as a token
+    keeps §3 prose free of hand-authored metric values: the numbers that show
+    a DAG edge actually carried data come from the run, not the author.
+
+    Args:
+        report: The parsed ``output/data/mission_report.json`` mapping.
+
+    Returns:
+        ``RESULT_NUM_HANDOFF_EDGES`` and ``RESULT_HANDOFF_SUMMARY``.
+    """
+    mission = cast(dict[str, Any], report.get("mission", {}))
+    packages = cast(list[dict[str, Any]], mission.get("packages", []))
+    outputs_by_package: dict[str, dict[str, str]] = {
+        str(entry.get("package_id", "")): {
+            str(key): str(value) for key, value in cast(dict[str, Any], entry.get("outputs", {})).items()
+        }
+        for entry in cast(list[dict[str, Any]], report.get("recon", []))
+    }
+
+    rendered: list[str] = []
+    for package in packages:
+        package_id = str(package.get("id", ""))
+        for dependency in cast(list[str], package.get("depends_on", [])):
+            payload = outputs_by_package.get(str(dependency), {})
+            values = ", ".join(f"{key}={value}" for key, value in sorted(payload.items()))
+            rendered.append(f"{dependency} → {package_id}: {values}" if values else f"{dependency} → {package_id}")
+
+    return {
+        "RESULT_NUM_HANDOFF_EDGES": str(len(rendered)),
+        "RESULT_HANDOFF_SUMMARY": "; ".join(rendered) if rendered else "none",
+    }
 
 
 def _stage_plan_tokens(stage_plan: dict[str, Any] | None) -> dict[str, str]:

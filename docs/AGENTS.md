@@ -11,15 +11,16 @@ DAG 00). Every document is a constraint, not a suggestion.
 | `README.md` | Quick navigation and audience-targeted entry points |
 | `AGENTS.md` | This index — technical overview of `docs/` |
 | `agent_instructions.md` | Behavioral constraints for AI agents (read-first priority) |
-| `architecture.md` | Layers, DAG model, five-phase lifecycle, checkpoint schema |
+| `architecture.md` | Module inventory, composition order, DAG model, five-phase lifecycle, frozen `bond_api` binding, checkpoint schema, CLI surface, frozen surfaces |
 | `protocol.md` | The MissionProvider protocol spec (canonical contract) |
 | `testing_philosophy.md` | Zero-mock policy; coverage mechanics; per-file coverage map |
 | `style_guide.md` | 7 rules: zero-mock, pure-core boundary, thin orchestrator, show-not-tell, explicit paths, type hints, error messages |
 | `output_conventions.md` | `output/` layout and regeneration sequence |
+| `_generated/COUNTS.md` | The single sanctioned home for measured numbers (tests, coverage split, lint/type results) |
 
 ## Reading Order
 
-1. **`agent_instructions.md`** — 7 hard rules + verification checklist.
+1. **`agent_instructions.md`** — 8 hard rules + verification checklist.
 2. **`architecture.md`** — layer boundaries before touching files.
 3. **`protocol.md`** — the provider contract before touching providers.
 4. **`testing_philosophy.md`** — zero-mock constraint before writing tests.
@@ -29,8 +30,14 @@ DAG 00). Every document is a constraint, not a suggestion.
 ## Key Conventions
 
 - **Pure-core isolation**: `src/bond_orchestrator/` is standalone-clean (no
-  `infrastructure.*`). This is the load-bearing property for the bond-api /
-  bond-utilities integration points.
+  `infrastructure.*`). `bond_api` may be imported only inside
+  `film_providers.py`, and only inside a function body — a module-scope import
+  there would silently make the whole package un-liftable.
+- **Frozen cross-package surfaces**: the five `MissionProvider` methods, the
+  `MissionPackage`/`MissionContext` shapes, and the `bond_api` protocol are
+  consumed by sibling packages. Additive change only.
+- **Numbers live in one file**: measured counts and percentages belong in
+  `_generated/COUNTS.md` and nowhere else; prose describes the gate.
 - **Determinism is load-bearing**: canonical topological order, pure
   providers, `sort_keys=True` artifacts, byte-equality tests.
 - **Zero-mock enforcement**: no `unittest.mock`/`MagicMock`/`@patch`/
@@ -44,6 +51,7 @@ DAG 00). Every document is a constraint, not a suggestion.
 uv run pytest tests/ --cov=src --cov-fail-under=90 -q          # gate
 grep -r "unittest.mock\|MagicMock\|@patch\|create_autospec" tests/ || echo "Clean"
 grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ || echo "Clean"
+# No leftover exemplar-lineage strings from the template_code_project fork
 rg -n "template_code_project" . --glob '!uv.lock' --glob '!.git/**' || echo "Clean"
 uv run ruff check src/ scripts/
 uv run mypy src/ scripts/

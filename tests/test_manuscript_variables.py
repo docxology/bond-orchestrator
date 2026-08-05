@@ -116,6 +116,83 @@ class TestWithReport:
         assert variables["RESULT_STAGE_PLAN"] == "1: goldfinger | 2: goldeneye | 3: no_time_to_die"
         assert variables["RESULT_RETRY_COUNT"] == "1"
 
+    def test_handoff_tokens_render_measured_recon_outputs(self, tmp_path) -> None:
+        """§3's DAG hand-off evidence is generated from the run, not typed."""
+        project = _make_project(tmp_path)
+        report_dir = project / "output" / "data"
+        report_dir.mkdir(parents=True)
+        (report_dir / "mission_report.json").write_text(
+            json.dumps(
+                {
+                    "mission": {
+                        "name": "OPERATION_OMNIBUS",
+                        "packages": [
+                            {"id": "goldfinger", "depends_on": []},
+                            {"id": "goldeneye", "depends_on": ["goldfinger"]},
+                            {"id": "no_time_to_die", "depends_on": ["goldeneye"]},
+                        ],
+                    },
+                    "order": ["goldfinger", "goldeneye", "no_time_to_die"],
+                    "executions": [],
+                    "debriefs": [{"verdict": "pass"}],
+                    "recon": [
+                        {"package_id": "goldfinger", "outputs": {"market_index": "0.92"}},
+                        {"package_id": "goldeneye", "outputs": {"emp_shield_rating": "0.87"}},
+                        {"package_id": "no_time_to_die", "outputs": {}},
+                    ],
+                }
+            )
+        )
+        variables = generate_variables(project)
+        assert variables["RESULT_NUM_HANDOFF_EDGES"] == "2"
+        assert variables["RESULT_HANDOFF_SUMMARY"] == (
+            "goldfinger → goldeneye: market_index=0.92; goldeneye → no_time_to_die: emp_shield_rating=0.87"
+        )
+
+    def test_handoff_edge_without_outputs_renders_bare(self, tmp_path) -> None:
+        """An edge whose upstream produced nothing still appears, without a payload."""
+        project = _make_project(tmp_path)
+        report_dir = project / "output" / "data"
+        report_dir.mkdir(parents=True)
+        (report_dir / "mission_report.json").write_text(
+            json.dumps(
+                {
+                    "mission": {
+                        "name": "M",
+                        "packages": [
+                            {"id": "a", "depends_on": []},
+                            {"id": "b", "depends_on": ["a"]},
+                        ],
+                    },
+                    "order": ["a", "b"],
+                    "executions": [],
+                    "debriefs": [{"verdict": "pass"}],
+                    "recon": [{"package_id": "a", "outputs": {}}],
+                }
+            )
+        )
+        variables = generate_variables(project)
+        assert variables["RESULT_HANDOFF_SUMMARY"] == "a → b"
+
+    def test_dependency_free_mission_reports_no_handoff_edges(self, tmp_path) -> None:
+        project = _make_project(tmp_path)
+        report_dir = project / "output" / "data"
+        report_dir.mkdir(parents=True)
+        (report_dir / "mission_report.json").write_text(
+            json.dumps(
+                {
+                    "mission": {"name": "M", "packages": [{"id": "a", "depends_on": []}]},
+                    "order": ["a"],
+                    "executions": [],
+                    "debriefs": [{"verdict": "pass"}],
+                    "recon": [{"package_id": "a", "outputs": {"k": "v"}}],
+                }
+            )
+        )
+        variables = generate_variables(project)
+        assert variables["RESULT_NUM_HANDOFF_EDGES"] == "0"
+        assert variables["RESULT_HANDOFF_SUMMARY"] == "none"
+
     def test_config_retry_token(self, tmp_path) -> None:
         project = _make_project(tmp_path)
         (project / "manuscript" / "config.yaml").write_text(
@@ -134,6 +211,8 @@ class TestWithReport:
         assert variables["RESULT_CRITICAL_PATH_LENGTH"] == "N/A"
         assert variables["RESULT_STAGE_PLAN"] == "N/A"
         assert variables["RESULT_RETRY_COUNT"] == "N/A"
+        assert variables["RESULT_NUM_HANDOFF_EDGES"] == "N/A"
+        assert variables["RESULT_HANDOFF_SUMMARY"] == "N/A"
 
     def test_failing_verdict_reports_fail(self, tmp_path) -> None:
         project = _make_project(tmp_path)

@@ -27,6 +27,7 @@ action:
 | [`testing_philosophy.md`](testing_philosophy.md) | Any test modification | Risk introducing mocks or reducing coverage |
 | [`style_guide.md`](style_guide.md) | Any source code modification | Risk wrong import layer, bad error messages |
 | [`output_conventions.md`](output_conventions.md) | Any output/ change | Risk editing generated files |
+| [`_generated/COUNTS.md`](_generated/COUNTS.md) | Any claim about a measured number | Risk quoting a stale figure as evidence |
 
 ---
 
@@ -107,7 +108,35 @@ Determinism is a hard contract, not a preference.
 
 ---
 
-## Rule 6: Style and Syntax Guides Govern Their Domains
+## Rule 6: Do Not Move a Frozen Surface
+
+Three surfaces cross package boundaries and are consumed by code you cannot
+see from here. Changing any of them breaks siblings silently — nothing in this
+package's gates will catch it.
+
+1. **The five `MissionProvider` methods** and their signatures
+   (`brief`/`recon`/`plan`/`execute`/`debrief`).
+2. **`MissionPackage` and `MissionContext` field shapes** — `bond-cli`'s `run`
+   command and `bond-coordinator` construct and read these directly.
+3. **The frozen `bond_api` protocol** used in `film_providers.py`. It is owned
+   by `bond-api` and implemented by 27 film packages. Adapt to it; never
+   change it, and never change this package to require a change in it.
+
+Additive change is fine: a new module, a new manuscript token, a new CLI flag
+with a backwards-compatible default. Renaming or re-typing is a suite break.
+
+Related hard constraint: **`bond_api` may be imported only inside
+`film_providers.py`, and only inside a function body.** A module-scope import
+passes ruff, mypy, and the full test suite while quietly making the pure core
+un-importable wherever bond-api is absent. Check it explicitly:
+
+```bash
+grep -rnE "^(from|import) bond_api" src/bond_orchestrator/ || echo "Clean"
+```
+
+---
+
+## Rule 7: Style and Syntax Guides Govern Their Domains
 
 - [`style_guide.md`](style_guide.md) governs `src/`, `scripts/`, `tests/`:
   mock prohibition, pure-core boundary, thin orchestrator, type hints, error
@@ -118,7 +147,7 @@ Determinism is a hard contract, not a preference.
 
 ---
 
-## Rule 7: `output/` Is Disposable — Never Edit Generated Files
+## Rule 8: `output/` Is Disposable — Never Edit Generated Files
 
 The `output/` tree is written by the pipeline and overwritten on every run.
 Editing a file in `output/` has zero lasting effect.
@@ -157,9 +186,21 @@ grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ \
 rg -n "template_code_project" . --glob '!uv.lock' --glob '!.git/**' \
     || echo "Clean — no lineage strings"
 
-# 5. Lint + types
-uv run ruff check src/ scripts/
+# 5. No module-scope bond_api import (the pure core must stay liftable)
+grep -rnE "^(from|import) bond_api" src/bond_orchestrator/ \
+    && echo "VIOLATION — bond_api imported at module scope" \
+    || echo "Clean — bond_api is lazy-imported only"
+
+# 6. Lint, format, types
+uv run ruff check src/ scripts/ tests/
+uv run ruff format --check src/ scripts/
 uv run mypy src/ scripts/
 ```
 
-All five must produce zero violations (or the "Clean" message).
+All six must produce zero violations (or the "Clean" message).
+
+If you changed anything that affects a measured figure, re-run the gate and
+update [`docs/_generated/COUNTS.md`](_generated/COUNTS.md) — and only that
+file. If your change adds a quantitative claim to the manuscript, add the
+token generator to `src/bond_orchestrator/manuscript_variables.py` and cite
+the token; never write the number into prose.

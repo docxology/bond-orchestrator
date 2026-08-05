@@ -4,7 +4,7 @@ A *stage* is a set of packages that may run concurrently without violating
 dependency order: every package in stage ``k`` has all of its dependencies in
 stages ``< k``.  Stage planning is the deterministic wavefront decomposition
 of the DAG (classic level-by-level scheduling of directed task graphs
-[@kwok1999]).  It does NOT change how the runner executes — execution stays
+[@kwok1999static]).  It does NOT change how the runner executes — execution stays
 sequential by design — it is the scheduling artifact that makes a later
 parallel executor safe, and it exposes the achievable parallelism and the
 critical path length of a mission.

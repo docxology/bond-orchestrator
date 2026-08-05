@@ -10,7 +10,7 @@ identity:
 
 paper:
   title: "BOND-ORCHESTRATOR: A Deterministic Mission DAG Runner"
-  subtitle: "Multi-package film missions over the MissionProvider protocol, with checkpoint/resume and provenance"
+  subtitle: "Multi-package film missions over the MissionProvider protocol, with cycle-path detection, checkpoint/resume, bounded deterministic retry, parallel-stage planning, real-film binding, and provenance"
   version: "2.5.2"
   date: "2026-08-04"
 
@@ -52,7 +52,13 @@ keywords:
   - "mission orchestration"
   - "DAG scheduling"
   - "topological order"
+  - "cycle detection"
   - "checkpoint/resume"
+  - "fault tolerance"
+  - "bounded retry"
+  - "wavefront stage planning"
+  - "critical path"
+  - "protocol adapter"
   - "deterministic execution"
   - "provenance"
   - "reproducible research"

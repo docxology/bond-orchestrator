@@ -60,6 +60,14 @@ uses `"N/A"` fallbacks for `RESULT_*` tokens.
 | `RESULT_MAX_PARALLELISM` | Widest stage | `.../mission_report.json` → `stage_plan` |
 | `RESULT_CRITICAL_PATH_LENGTH` | Stage count | `.../mission_report.json` → `stage_plan` |
 | `RESULT_STAGE_PLAN` | Stage plan (index: pkgs...) | `.../mission_report.json` → `stage_plan` |
+| `RESULT_NUM_HANDOFF_EDGES` | DAG hand-off edges carried by the run | `.../mission_report.json` → `mission.packages[*].depends_on` × `recon` |
+| `RESULT_HANDOFF_SUMMARY` | Each edge and its measured recon payload | same (rendered by `_handoff_tokens`) |
+
+The hand-off tokens exist specifically so §3 can show that a dependency edge
+actually carried data without an author typing a value such as
+`market_index=0.92` into prose — a number that would drift silently the moment
+a provider's spec changed. Any future quantitative claim in §3 must get the
+same treatment.
 
 The live cross-reference test
 (`tests/test_manuscript_variables.py::test_all_manuscript_tokens_are_generated`)

@@ -148,6 +148,23 @@ class TestExitCodeHelper:
         assert cli.exit_code_for(report) == 1
 
 
+class TestDefaultOutputRoot:
+    """`run` without `--output-dir` writes under the package root, not the cwd."""
+
+    def test_project_root_resolves_to_the_package_root(self) -> None:
+        root = cli._project_root()
+        assert (root / "pyproject.toml").is_file()
+        assert (root / "src" / "bond_orchestrator" / "cli.py").is_file()
+        assert root.name == "bond-orchestrator"
+
+    def test_output_dir_flag_defaults_to_none_so_the_root_is_used(self) -> None:
+        """`--output-dir` unset must mean "package root", not "current dir"."""
+        args = cli.build_parser().parse_args(["run", "OPERATION_SINGLET"])
+        assert args.output_dir is None
+        assert args.checkpoint_dir is None
+        assert args.retry_max_attempts == 1
+
+
 def _reference_providers() -> dict[str, MissionProvider]:
     from bond_orchestrator.providers import REFERENCE_PROVIDERS
 

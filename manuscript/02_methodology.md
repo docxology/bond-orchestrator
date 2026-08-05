@@ -66,7 +66,11 @@ When any execution result carries a retryable outcome (`"failure"` by
 default), the step is re-executed — immediately and deterministically, with
 **no wall-clock backoff**, because a sleep would break the byte-determinism of
 reports, checkpoint files, and provenance records. After `max_attempts` the
-final outcome stands. Every step that needed more than one attempt records a
+final outcome stands. This is fault *tolerance* in the standard sense — a
+transient fault is masked before it becomes a mission failure, while a
+persistent one is allowed to surface [@avizienis2004basic] — with the backoff
+term removed because reproducibility outranks throughput here. Every step that
+needed more than one attempt records a
 `RetryRecord` (package, phase, attempts, succeeded) in the mission report and
 in its checkpoint record; retries are thus observable, resumable, and
 manuscript-token-able, while the consolidated debrief only annotates them when
@@ -85,7 +89,46 @@ itself remains sequential — the stages are the *planning artifact* that makes
 a future parallel executor provably safe, since every package in a stage may
 run concurrently without violating dependency order.
 
-## 2.6 Provenance
+## 2.6 Real-film binding
+
+The orchestrator's own protocol (§2.2) is the *runner-side* contract: it is
+package-aware, because the runner must hand a `MissionPackage` and the shared
+`MissionContext` to every call. The film packages of the BOND fleet implement
+a different, deliberately narrower contract — the **frozen `bond_api`
+`MissionProvider`**, whose methods take only a `ReconRequest`, a
+`MissionPlan`, or a `MissionOutcome` and know nothing about DAGs. Neither
+contract may move: the frozen protocol is consumed by 27 film packages, and
+the runner-side shapes (`MissionPackage`, `MissionContext`) are consumed by
+`bond-cli` and `bond-coordinator`.
+
+`src/bond_orchestrator/film_providers.py` resolves that tension with an
+adapter [@gamma1994design]. `FilmProviderAdapter` wraps one discovered
+`bond_api` provider and presents the runner-side interface, translating in
+both directions:
+
+- **Down** — the DAG hand-off is folded into the film's own vocabulary. The
+  adapter renders each `depends_on` dependency's recon `outputs` into the
+  `ReconRequest.goal` text (`_citation_text`), so a film that has never heard
+  of the DAG still receives its upstream intelligence; a dependency that
+  produced no outputs contributes nothing rather than an empty citation.
+- **Up** — the film's `Finding` list becomes the adapter's `ReconReport`:
+  labels with detail become `outputs` (the downstream hand-off channel),
+  every finding becomes a rendered `findings` entry, the film's plan steps are
+  renumbered from 1, and the `MissionOutcome`'s numeric results become the
+  `Debrief` metrics (booleans excluded — `bool` is an `int` in Python and
+  would otherwise be reported as a measurement).
+
+`load_film_providers(slugs, bond_root)` discovers each film from
+`<bond_root>/<slug>/src` through `bond_api.discovery.load_provider` and is
+**strict**: a missing package directory, an absent `mission.py`, or a
+discovery failure raises `FilmProviderError` rather than dropping a package,
+because a silently short mission would still report all-verdicts-pass.
+`load_mission_providers(mission, bond_root)` binds every package a `Mission`
+declares. `bond_api` is imported *lazily*, inside the methods that need it, so
+the pure core of §2.1–§2.5 remains liftable into any environment where
+bond-api is not installed.
+
+## 2.7 Provenance
 
 For every outcome — each executed plan step and each debrief — the runner
 emits a `ProvenanceRecord` (`src/bond_orchestrator/provenance.py`) carrying a

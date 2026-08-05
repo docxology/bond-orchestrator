@@ -87,6 +87,30 @@ class TestProtocolConformance:
         assert any("cites goldfinger: " in f for f in report.findings)
 
 
+class TestMissionContext:
+    """The context is the DAG hand-off channel; both of its readers matter."""
+
+    def test_has_recon_tracks_completed_packages(self) -> None:
+        context = MissionContext()
+        package = OPERATION_OMNIBUS.package("goldfinger")
+        assert not context.has_recon("goldfinger")
+        context.recon_reports["goldfinger"] = GoldfingerProvider().recon(package, context)
+        assert context.has_recon("goldfinger")
+        assert not context.has_recon("goldeneye")
+
+    def test_outputs_for_absent_package_is_empty(self) -> None:
+        assert MissionContext().outputs_for("goldfinger") == {}
+
+    def test_outputs_for_returns_a_copy(self) -> None:
+        """Mutating a caller's view must not corrupt the recorded recon report."""
+        context = MissionContext()
+        package = OPERATION_OMNIBUS.package("goldfinger")
+        context.recon_reports["goldfinger"] = GoldfingerProvider().recon(package, context)
+        view = context.outputs_for("goldfinger")
+        view["market_index"] = "999"
+        assert context.outputs_for("goldfinger")["market_index"] == "0.92"
+
+
 class TestDeterminism:
     """Two identical runs produce byte-identical records."""
 

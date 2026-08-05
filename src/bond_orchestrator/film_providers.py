@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from .protocol import (
     Debrief,
@@ -40,10 +40,12 @@ from .protocol import (
     ReconReport,
 )
 
-if TYPE_CHECKING:  # pragma: no cover - type-only, never imported at runtime
-    pass
-
-__all__ = ["FilmProviderAdapter", "FilmProviderError", "load_film_providers"]
+__all__ = [
+    "FilmProviderAdapter",
+    "FilmProviderError",
+    "load_film_providers",
+    "load_mission_providers",
+]
 
 
 class FilmProviderError(RuntimeError):
