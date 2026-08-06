@@ -4,19 +4,19 @@ Regenerated whenever the suite changes; never hardcode these numbers in prose
 (they drift faster than the docs touching them). Everything below was read out
 of an actual gate run — no figure here is estimated or rounded.
 
-## Test suite (measured 2026-08-05, phase-6 verifier-remediation pass)
+## Test suite (measured 2026-08-06, round-2 improvement pass)
 
 | Metric | Value |
 |---|---|
-| Tests passing | 173 |
+| Tests passing | 178 |
 | Tests skipped / failed | 0 / 0 |
-| Statements in `src/` | 793 |
+| Statements in `src/` | 840 |
 | Statements missed | 0 |
 | Line coverage on `src/` | 100.00% |
-| Branches in `src/` | 172 |
+| Branches in `src/` | 190 |
 | Partial branches | 10 |
-| Branch coverage on `src/` | 94.19% |
-| Combined line+branch coverage (the gate's figure) | 98.96% |
+| Branch coverage on `src/` | 94.74% |
+| Combined line+branch coverage (the gate's figure) | 99.03% |
 | Coverage floor (`pyproject.toml`) | 90% |
 | Interpreter used for this run | CPython 3.14.6 (darwin) |
 
@@ -27,12 +27,14 @@ uv run pytest tests/ --cov=src --cov-fail-under=90     # the enforced gate
 uv run coverage json -o cov.json                       # for the split figures
 ```
 
-The gate prints the combined line+branch figure (98.96%); the split figures
-come from `coverage json`. The prior entry claimed branch coverage "≥92%",
-which was an assertion rather than a measurement — it is now the measured
-94.19%. The 10 partial branches are the `...` bodies of the `MissionProvider`
-Protocol stubs (9) plus one fall-through in checkpoint replay: structural, not
-logic gaps. See `docs/testing_philosophy.md`.
+The gate prints the combined line+branch figure (99.03%); the split figures
+come from `coverage json`. The 10 partial branches are the `...` bodies of the
+`MissionProvider` Protocol stubs (9) plus one fall-through in checkpoint
+replay: structural, not logic gaps. See `docs/testing_philosophy.md`.
+
+Round-2 added 5 tests (173 → 178) for the three hardened gates: checkpoint
+definition-hash resume (C1), empty-mission rejection, and the full-definition
+provenance run id.
 
 ## Lint and types
 

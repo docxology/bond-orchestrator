@@ -50,6 +50,17 @@ class TestBuildFilmGraph:
         graph = build_film_graph((a, a))
         assert graph.nodes == ("a",)
 
+    def test_empty_mission_rejected(self) -> None:
+        """A mission with zero packages is a fail-open (vacuously green all-pass).
+
+        Reject it at graph build time rather than let the runner report a
+
+        zero-step, all-verdicts-pass mission that was never really run.
+
+        """
+        with pytest.raises(GraphError, match="no packages"):
+            build_film_graph(())
+
 
 class TestTopologicalOrder:
     def test_omnibus_order(self) -> None:

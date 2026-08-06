@@ -144,6 +144,11 @@ def build_film_graph(packages: Sequence[MissionPackage]) -> FilmGraph:
         GraphError: A package depends on itself.
         CycleError: The dependency graph contains a cycle.
     """
+    if not packages:
+        # A mission with no packages could only report a vacuously green
+        # all-verdicts-pass with zero steps — a fail-open that hides a misbuilt
+        # mission. Reject it loudly instead.
+        raise GraphError("mission has no packages; refusing an empty film graph")
     nodes: list[str] = []
     for pkg in packages:
         if pkg.id not in nodes:

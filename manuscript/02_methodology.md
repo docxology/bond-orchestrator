@@ -51,9 +51,13 @@ is persisted as `<checkpoint_dir>/<mission>/<phase>_<package>.json` with a
 `manifest.json` tracking completed steps in order. Re-running the same mission
 with the same checkpoint dir replays completed steps (recon reports are
 restored into the context so downstream steps see identical inputs) and
-resumes from the last completed step. Execute steps additionally persist
-their attempt count, so a retried step (§2.4) resumes with an identical retry
-record. This follows the standard checkpoint/rollback-recovery pattern for
+resumes from the last completed step. The manifest records a deterministic
+*fingerprint of the mission definition* (name + every package and its
+`depends_on` edges, via `protocol.mission_fingerprint`); a resume against a
+checkpoint dir written for a different definition is refused loudly rather
+than replaying stale steps that describe a mission never executed (TODO C1).
+Execute steps additionally persist their attempt count, so a retried step
+(§2.4) resumes with an identical retry record. This follows the standard checkpoint/rollback-recovery pattern for
 long-running distributed work [@elnozahy2002survey; @chandy1985distributed],
 specialised here for deterministic single-node execution.
 
@@ -134,6 +138,7 @@ For every outcome — each executed plan step and each debrief — the runner
 emits a `ProvenanceRecord` (`src/bond_orchestrator/provenance.py`) carrying a
 deterministic run id (sha256 over mission name + package ids), the package and
 provider, the phase, the outcome, artifact references, and numeric metrics.
-Records are written as `outcomes.json` and a flat `provenance.csv`. This is
-the mission_io-equivalent of `bond-utilities`; the integration point is
-tracked in `TODO.md`.
+Records are written as `outcomes.json` and a flat `provenance.csv`. This is an
+independent, deterministic provenance writer, not yet a delegation to
+`bond-utilities.mission_io` (the integration and its schema mapping are tracked
+in `TODO.md`, §7.4).

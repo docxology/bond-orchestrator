@@ -15,9 +15,10 @@ adapter of §2.6 binds the REAL film packages built to the frozen
 `bond_api.MissionProvider` protocol, and §3.3 runs them through the same
 runner with the same guarantees intact. The one integration point still
 declared rather than wired is provenance delegation to
-`bond-utilities.mission_io`; `src/bond_orchestrator/provenance.py` is the
-schema-identical stand-in until it ships, and the acceptance criteria are
-tracked in `TODO.md`.
+`bond-utilities.mission_io`: `src/bond_orchestrator/provenance.py` is today an
+independent, non-delegating record writer whose schema differs from
+`mission_io`'s, and the delegation mapping plus acceptance criteria are tracked
+in `TODO.md` and §7.4.
 
 Two design choices carry the rest of the package. Retries were made
 *immediate* rather than backed off, because a wall-clock sleep would put a

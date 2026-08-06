@@ -41,6 +41,7 @@ from .protocol import (
     Plan,
     PlanStep,
     ReconReport,
+    mission_fingerprint,
 )
 from .retry import RetryPolicy, RetryRecord, should_retry
 
@@ -191,12 +192,25 @@ class _RunState:
         self._debriefs: list[Debrief] = []
         self._retries: list[RetryRecord] = []
         self._step_dir: Path | None = Path(checkpoint_dir) / mission.name if checkpoint_dir is not None else None
+        self._expected_fingerprint = mission_fingerprint(mission)
         self._manifest: set[str] = set()
         if self._step_dir is not None:
             self._step_dir.mkdir(parents=True, exist_ok=True)
             manifest_path = self._step_dir / MANIFEST_FILENAME
             if manifest_path.exists():
                 manifest = _read_json(manifest_path)
+                stored_hash = manifest.get("definition_hash")
+                if stored_hash != self._expected_fingerprint:
+                    # Written by a different mission definition (name, package
+                    # set, or depends_on edges). Replaying stale step files
+                    # would describe a mission that was never executed (TODO
+                    # C1); refuse loudly rather than silently skipping steps.
+                    raise MissionError(
+                        f"checkpoint dir {self._step_dir} was written for a "
+                        "different mission definition (recorded definition_hash "
+                        f"{stored_hash!r} != current {self._expected_fingerprint[:8]}...); "
+                        "use a fresh checkpoint dir for a changed mission"
+                    )
                 self._manifest = set(cast("list[str]", manifest.get("steps", [])))
 
     def run_step(self, phase: str, package_id: str) -> None:
@@ -292,7 +306,15 @@ class _RunState:
         (self._step_dir / _step_filename(step_id)).write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
         self._manifest.add(step_id)
         (self._step_dir / MANIFEST_FILENAME).write_text(
-            json.dumps({"mission": self._mission.name, "steps": sorted(self._manifest)}, indent=2, sort_keys=True)
+            json.dumps(
+                {
+                    "mission": self._mission.name,
+                    "definition_hash": self._expected_fingerprint,
+                    "steps": sorted(self._manifest),
+                },
+                indent=2,
+                sort_keys=True,
+            )
             + "\n"
         )
 

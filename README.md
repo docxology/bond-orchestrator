@@ -10,7 +10,7 @@ brief() all → recon() (sequential + deterministic) → plan() → execute() �
 
 with checkpoint/resume (intermediate reports persisted to a state dir),
 deterministic retry policy, parallel-stage planning, and provenance
-(mission_io-equivalent) written for every outcome.
+(written by an independent, deterministic provenance module) for every outcome.
 
 ## What it does
 

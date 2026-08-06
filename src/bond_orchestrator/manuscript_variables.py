@@ -79,6 +79,8 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
                 "RESULT_RETRY_COUNT": str(len(cast(list[Any], report.get("retries", [])))),
                 **(_stage_plan_tokens(stage_plan) if stage_plan else _stage_plan_tokens(None)),
                 **_handoff_tokens(report),
+                **_results_tokens(report),
+                **_dag_figure(report),
             }
         )
     elif require_outputs:
@@ -100,6 +102,8 @@ def generate_variables(project_root: Path, require_outputs: bool = True) -> dict
                 "RESULT_STAGE_PLAN": "N/A",
                 "RESULT_NUM_HANDOFF_EDGES": "N/A",
                 "RESULT_HANDOFF_SUMMARY": "N/A",
+                "RESULT_PACKAGE_RESULTS": "N/A",
+                "RESULT_DAG_FIGURE": "N/A",
             }
         )
     return variables
@@ -194,3 +198,64 @@ def _stage_plan_tokens(stage_plan: dict[str, Any] | None) -> dict[str, str]:
         "RESULT_CRITICAL_PATH_LENGTH": str(stage_plan.get("critical_path_length", 0)),
         "RESULT_STAGE_PLAN": rendered,
     }
+
+
+def _results_tokens(report: dict[str, Any]) -> dict[str, str]:
+    """Per-package verdict + numeric metrics rendered as a markdown table.
+
+    Fed by the mission report's ``debriefs`` list, so §3's results table is
+    the live execution's own record — no hand-authored cell. Metrics are
+    sorted by key and formatted with ``%g`` (deterministic, matches the
+    consolidated debrief's rendering).
+    """
+    debriefs = cast(list[dict[str, Any]], report.get("debriefs", []))
+    rows: list[str] = []
+    for debrief in debriefs:
+        package_id = str(debrief.get("package_id", ""))
+        verdict = str(debrief.get("verdict", ""))
+        metrics = cast(dict[str, Any], debrief.get("metrics", {}))
+        rendered = ", ".join(f"{key}={float(value):g}" for key, value in sorted(metrics.items()))
+        rows.append(f"| {package_id} | {verdict} | {rendered} |")
+    table = "| Package | Verdict | Metrics |\n|---|---|---|\n" + "\n".join(rows)
+    return {"RESULT_PACKAGE_RESULTS": table}
+
+
+def _dag_figure(report: dict[str, Any]) -> dict[str, str]:
+    """A deterministic text 'figure': the measured DAG bound to live results.
+
+    Renders each package from ``report["order"]`` with its stage (from
+    ``stage_plan``) and debrief verdict, then each declared hand-off edge with
+    the upstream's *measured* recon ``outputs``. Every glyph is derived from
+    the run's own JSON, so the figure cannot disagree with the engine.
+    """
+    order = cast(list[str], report.get("order", []))
+    debriefs = cast(list[dict[str, Any]], report.get("debriefs", []))
+    recon = cast(list[dict[str, Any]], report.get("recon", []))
+    stage_plan = cast(dict[str, Any] | None, report.get("stage_plan"))
+    mission = cast(dict[str, Any], report.get("mission", {}))
+
+    verdicts = {str(d.get("package_id", "")): str(d.get("verdict", "")) for d in debriefs}
+    stage_of: dict[str, int] = {}
+    if stage_plan:
+        for stage_obj in cast(list[dict[str, Any]], stage_plan.get("stages", [])):
+            for pid in cast(list[str], stage_obj.get("packages", [])):
+                stage_of[str(pid)] = cast(int, stage_obj.get("index", 0))
+    outputs_by: dict[str, dict[str, str]] = {
+        str(r.get("package_id", "")): {str(k): str(v) for k, v in cast(dict[str, Any], r.get("outputs", {})).items()}
+        for r in recon
+    }
+
+    lines: list[str] = []
+    lines.append("measured DAG (from the live mission report)")
+    for pid in order:
+        stage = stage_of.get(pid, 0)
+        verdict = verdicts.get(pid, "?")
+        lines.append(f"  stage {stage}  {pid}  verdict={verdict}")
+    for package in cast(list[dict[str, Any]], mission.get("packages", [])):
+        pid = str(package.get("id", ""))
+        for dependency in cast(list[str], package.get("depends_on", [])):
+            payload = outputs_by.get(str(dependency), {})
+            label = ", ".join(f"{k}={v}" for k, v in sorted(payload.items())) if payload else ""
+            arrow = f"\u2502{label}\u2500\u25b6 {pid}" if label else f"\u2502\u2500\u25b6 {pid}"
+            lines.append(f"     {arrow}")
+    return {"RESULT_DAG_FIGURE": "\n".join(lines)}

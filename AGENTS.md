@@ -44,7 +44,7 @@ per-outcome provenance records.
 - **Parallel-stage planning** — wavefront `StagePlan` (achievable parallelism
   + critical path), rendered by the `plan` CLI command and carried in reports.
 - **Provenance** — one `ProvenanceRecord` per executed step and per debrief
-  (mission_io-equivalent; `outcomes.json` + `provenance.csv`, deterministic
+  (independent provenance writer; `outcomes.json` + `provenance.csv`, deterministic
   run id).
 - **Real-film binding** — `film_providers.py` adapts real `bond-api`
   `MissionProvider` films to the orchestrator contract (lazy import keeps the
@@ -160,7 +160,7 @@ those figures into any other file.
 | Dependency | Status | What changed |
 | --- | --- | --- |
 | `bond-api` (frozen `MissionProvider`) | **wired** | `film_providers.py` adapts real bond-api providers to the runner contract; `bond-api` is a local path dependency (imported lazily so the pure core stays liftable) |
-| `bond-utilities` (`mission_io`) | declared | `provenance.py` may delegate to it; `mission_io.record_provenance_outcome` is the shared provenance helper |
+| `bond-utilities` (`mission_io`) | not declared / not wired | `provenance.py` does not import it and the schema differs (TODO V1); a delegation mapping is the pending integration |
 | film packages (27) | **wired** | `film_providers.load_film_providers`/`load_mission_providers` discover real films from `src/` and bind them; `providers.py` reference classes remain for pure tests |
 
 Real-film missions (e.g. goldfinger → goldeneye → no_time_to_die) run through

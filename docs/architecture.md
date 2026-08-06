@@ -144,7 +144,7 @@ plan step and per debrief: deterministic run id (sha256 over mission name +
 package ids), orchestrator identity (BOND-ORCHESTRATOR / DAG 00), schema
 version, package/provider/phase/outcome/detail, artifact refs, metrics.
 Written as `outcomes.json` + flat `provenance.csv`. This is the
-mission_io-equivalent until `bond-utilities` ships.
+an independent provenance writer (delegation to `bond-utilities.mission_io` is pending).
 
 ## Missions and providers
 

@@ -1,8 +1,8 @@
-"""Provenance recording for every mission outcome (mission_io-equivalent).
+"""Provenance recording for every mission outcome.
 
-The BOND suite routes provenance through ``bond-utilities.mission_io`` once
-that package lands (see ``TODO.md``).  Until then this module is the canonical
-writer: one :class:`ProvenanceRecord` per executed plan step and per debrief,
+This module is an **independent, non-delegating** provenance writer today: it
+does not import ``bond-utilities.mission_io`` and its record schema differs
+from that helper's (see ``TODO.md`` V1/E6). It is the canonical writer of one :class:`ProvenanceRecord` per executed plan step and per debrief,
 serialized to ``outcomes.json`` (record list) and ``provenance.csv`` (flat
 rows) with a deterministic ``run_id`` so records are reproducible.
 """
@@ -10,12 +10,11 @@ rows) with a deterministic ``run_id`` so records are reproducible.
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .protocol import Mission
+from .protocol import Mission, mission_fingerprint
 from .runner import MissionReport
 
 ORCHESTRATOR_IDENTITY = "BOND-ORCHESTRATOR"
@@ -88,9 +87,15 @@ class ProvenanceRecord:
 
 
 def derive_run_id(mission: Mission) -> str:
-    """Deterministic run id: sha256 over mission name + package ids, 12 hex chars."""
-    material = f"{mission.name}|{','.join(mission.package_ids())}".encode("utf-8")
-    return hashlib.sha256(material).hexdigest()[:12]
+    """Deterministic run id: 12 hex chars of the mission-definition fingerprint.
+
+    Fingerprints the *full* mission definition (name plus every package and its
+    ``depends_on`` edges) via :func:`bond_orchestrator.protocol.mission_fingerprint`,
+    so two missions that share a name and package set but differ in any
+    dependency edge cannot collide on a provenance run id. (The prior form
+    hashed name + package ids only and was blind to the DAG structure.)
+    """
+    return mission_fingerprint(mission)[:12]
 
 
 def collect_outcome_records(

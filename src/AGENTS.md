@@ -22,7 +22,7 @@ bond-utilities integration points trivial.
 | `missions.py` | Registry: OPERATION OMNIBUS / DIAMOND / SINGLET, `get_mission` |
 | `providers.py` | `DeterministicProvider` base + reference film providers |
 | `film_providers.py` | `FilmProviderAdapter` binding real `bond-api` film providers (lazy import) |
-| `provenance.py` | mission_io-equivalent: `ProvenanceRecord`, `write_outcome_records`, `write_mission_report` |
+| `provenance.py` | independent deterministic writer: `ProvenanceRecord`, `write_outcome_records`, `write_mission_report` |
 | `manuscript_variables.py` | `generate_variables()` — `{{TOKEN}}` map from config.yaml + mission report |
 | `cli.py` | argparse CLI: `run <mission> [--checkpoint-dir] [--output-dir] [--retry-max-attempts]`, `plan <mission>`, `list` |
 | `__init__.py` | Public re-exports; identity BOND-ORCHESTRATOR / codename DAG 00 |

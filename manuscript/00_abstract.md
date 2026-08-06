@@ -13,7 +13,9 @@ The flagship canned mission, **{{CONFIG_MISSION_NAME}}**, chains
 {{RESULT_EXECUTION_ORDER}}, with an all-verdicts outcome of
 **{{RESULT_ALL_VERDICTS_PASS}}**.
 
-Every outcome is recorded with provenance (mission_io-equivalent), and
+Every outcome is recorded with provenance (an independent, deterministic
+record writer — this package does not yet delegate to `bond-utilities.mission_io`,
+see §7.4), and
 intermediate reports persist to a state directory so an interrupted mission
 resumes from its last completed step. The execution core is pure logic with
 zero infrastructure imports; determinism is load-bearing: identical inputs

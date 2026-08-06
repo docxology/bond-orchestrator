@@ -271,3 +271,89 @@ uv run python scripts/generate_manuscript_variables.py
 Measured counts, the coverage split and lint/type results live in
 [`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md) — read V3 above before
 trusting them.
+
+
+---
+
+## Round-2 (2026-08-06) — improvement pass
+
+### Findings → fixes (each with a regression / negative-control test)
+
+- **C1 — checkpoint resume never checked the mission definition (closed).**
+  The runner loaded `manifest["steps"]` without comparing the mission that
+  wrote them. Now `protocol.mission_fingerprint` hashes the full definition
+  (name + every package and its `depends_on` edges); `_RunState` records it as
+  `definition_hash` in `manifest.json` and refuses (`MissionError`) to load a
+  checkpoint dir written for a different definition — including an older dir
+  that has no hash at all. Tests: `test_manifest_records_definition_hash`,
+  `test_resume_rejects_changed_mission_definition` (mutates `depends_on`),
+  `test_resume_accepts_unchanged_definition` (positive control). Fresh-run
+  byte-determinism is preserved because both runs write the same hash.
+- **Empty-mission fail-open (closed).** `build_film_graph(())` returned an
+  empty graph, so a zero-package `Mission` ran zero steps and reported a
+  vacuously green all-verdicts-pass. It now raises
+  `GraphError("mission has no packages; ...")`. Test:
+  `test_empty_mission_rejected` in `tests/test_graph.py`.
+- **Provenance run id ignored the DAG structure (closed).** `derive_run_id`
+  hashed only mission name + package ids, so two missions with the same name
+  and package set but different `depends_on` edges shared one run id. It now
+  hashes the full mission fingerprint (`mission_fingerprint(m)[:12]`, still 12
+  hex chars, still distinct per canned mission). Test:
+  `test_run_id_fingerprints_dependency_structure` in `tests/test_provenance.py`.
+- **Documentation honesty — D1 / D2 / V1 prose (closed).** Every
+  "mission_io-equivalent", "schema-identical stand-in", "drop-in equivalent",
+  and "until it ships / once that package lands / will delegate once it ships"
+  site in `README.md`, `AGENTS.md`, `src/AGENTS.md`, `src/__init__.py`,
+  `src/provenance.py`, `manuscript/00_abstract.md`, `manuscript/02_methodology.md`,
+  `manuscript/04_conclusion.md` and `docs/architecture.md` now states the
+  truth: `provenance.py` is an independent, **non-delegating** writer whose
+  schema differs from `mission_io`'s, and the schema mapping is the real
+  blocker (V1/E6). `AGENTS.md`'s `bond-utilities` integration row now reads
+  "not declared / not wired" (D2). Took the prose-softening branch of V1's
+  two-option done-when (a schema-comparison test would require declaring the
+  `bond-utilities` dependency, which this package should not take on).
+
+### Gates (measured 2026-08-06, CPython 3.14.6, darwin)
+
+| Gate | Result |
+|---|---|
+| `uv run pytest tests/ --cov=src --cov-fail-under=90` | **178 passed, 0 skipped, 0 failed; 99.03%** combined line+branch (baseline 173 / 98.96%) |
+| `uv run ruff check src/ scripts/ tests/` | clean |
+| `uv run ruff format --check src/ scripts/` | clean (15 files) |
+| `uv run mypy src/ scripts/` | no issues in 15 source files |
+| honesty greps (no mocks, pure core, no module-scope `bond_api`) | clean |
+
+Live counts updated in [`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md)
+to the measured split: 840 stmts / 0 missed (100% line), 190 branches /
+10 partial (94.74% branch), 99.03% combined.
+
+### Regenerated evidence
+`output/data/mission_report.json`, `output/data/provenance/`, `output/state/`
+and `output/data/manuscript_variables.json` (38 tokens, including two new live
+tokens) regenerated via:
+`uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state`
+then `uv run python scripts/generate_manuscript_variables.py`.
+
+### Manuscript (round-2 additions)
+- §3.1 per-package debrief table, bound to a new live `RESULT_PACKAGE_RESULTS`
+  token (debrief scan of the report; `%g` formatting matches the runner).
+- §3.6 "The measured DAG" — a deterministic text figure bound to a new live
+  `RESULT_DAG_FIGURE` token (stages + verdicts + measured hand-off payloads).
+- §7.4 "Limitations and uncertainty" — honest limits: provenance not yet
+  `mission_io`; single-interpreter evidence for the `>=3.10` floor (V2);
+  hand-maintained `COUNTS.md` (V3); the strict new checkpoint semantics;
+  why real-film retry cannot rescue a deterministic film; parallel execution
+  planned not performed; empty-plan packages passing vacuously; single-node,
+  single-interpreter determinism.
+- §2.3 updated to describe the definition-hash resume guard; §7.3 and the
+  manuscript `AGENTS.md` token table updated to match.
+
+### Left for a future round
+- V2 (no 3.10–3.13 run of the `>=3.10` floor) and V3 (COUNTS.md ungated) remain
+  open from the pre-round-2 backlog.
+- E1–E7 extension items (list-providers CLI, `--parallel`, one-shot
+  regeneration, wall-clock diagnostics, roster-derived missions,
+  `mission_io` delegation, coordinator hand-off) remain as documented.
+- The new empty-mission guard rejects zero-package missions; a future round
+  could also decide whether a *zero-step provider* (empty plan) should be
+  rejected instead of passing vacuously.

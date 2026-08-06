@@ -12,7 +12,7 @@ The orchestrator executes canned film missions end-to-end over the
     execute() -> debrief() -> consolidated report
 
 with checkpoint/resume (intermediate reports persisted to a state dir) and
-provenance records (mission_io-equivalent) written for every outcome.
+provenance records (written by an independent, deterministic module) for every outcome.
 
 The mathematical core of this package is pure logic: no infrastructure
 imports, no I/O inside the protocol/graph modules; I/O lives in the runner's

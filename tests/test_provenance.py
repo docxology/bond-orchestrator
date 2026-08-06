@@ -6,6 +6,7 @@ import csv
 import json
 
 from bond_orchestrator.missions import OPERATION_DIAMOND, OPERATION_OMNIBUS
+from bond_orchestrator.protocol import Mission, MissionPackage
 from bond_orchestrator.provenance import (
     PROVENANCE_CSV_FIELDS,
     PROVENANCE_SCHEMA_VERSION,
@@ -32,6 +33,23 @@ class TestRunId:
 
     def test_run_id_is_twelve_hex_chars(self) -> None:
         assert len(derive_run_id(OPERATION_OMNIBUS)) == 12
+
+    def test_run_id_fingerprints_dependency_structure(self) -> None:
+        """Two missions with the same name and package set but different edges
+        must NOT share a provenance run id (pre-round-2 hashed name+ids only)."""
+        a = MissionPackage(id="a", title="A", objective="x")
+        m1 = Mission(
+            name="M",
+            packages=(
+                a,
+                MissionPackage(id="b", title="B", objective="y", depends_on=("a",)),
+            ),
+        )
+        m2 = Mission(
+            name="M",
+            packages=(a, MissionPackage(id="b", title="B", objective="y")),  # edge removed
+        )
+        assert derive_run_id(m1) != derive_run_id(m2)
 
 
 class TestCollectOutcomeRecords:

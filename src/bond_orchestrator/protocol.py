@@ -20,6 +20,8 @@ later phase; the DAG order is what makes it parallel-safe).
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
@@ -76,6 +78,25 @@ class Mission:
     def as_dict(self) -> dict[str, object]:
         """Deterministic serialization of the mission."""
         return {"name": self.name, "packages": [pkg.as_dict() for pkg in self.packages]}
+
+
+def mission_fingerprint(mission: Mission) -> str:
+    """Canonical, deterministic fingerprint of a mission's full definition.
+
+    Hashes the mission name together with every package's id, title, objective
+    and ``depends_on`` edges (via :meth:`Mission.as_dict` serialised with sorted
+    keys), so two missions that share a name but differ in *any* package or
+    dependency edge produce different fingerprints.  This is the same material
+    the runner records in ``manifest.json`` to bind a checkpoint directory to
+    exactly one mission definition (see ``TODO.md`` C1), and it underlies
+    :func:`bond_orchestrator.provenance.derive_run_id` so provenance run ids
+    cannot collide across differently-shaped missions.
+
+    Returns:
+        A 64-char lowercase sha256 hex digest over the canonical serialisation.
+    """
+    material = json.dumps(mission.as_dict(), sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(material).hexdigest()
 
 
 @dataclass(frozen=True)

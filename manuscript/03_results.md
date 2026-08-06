@@ -16,6 +16,14 @@ The mission executed **{{RESULT_NUM_STEPS}}** plan steps across all packages,
 and the consolidated debrief closed with an all-verdicts outcome of
 **{{RESULT_ALL_VERDICTS_PASS}}**.
 
+The per-package debrief table below is read out of the live execution (`output/data/mission_report.json`)
+by `src/bond_orchestrator/manuscript_variables.py::_results_tokens` — the same
+report the consolidated debrief prints. No cell is hand-typed; every verdict
+and metric is the engine's own record, formed with the same `%g` formatting
+the runner uses so the table cannot disagree with the debrief it summarizes.
+
+{{RESULT_PACKAGE_RESULTS}}
+
 Dependency-edge semantics were verified at recon time. The run carried
 **{{RESULT_NUM_HANDOFF_EDGES}}** hand-off edges, each one an upstream
 package's recorded recon `outputs` reaching its declared downstream consumer:
@@ -105,3 +113,21 @@ retry record exists only when a transient failure was actually re-executed
 (§2.4), so an empty ledger is evidence of a clean run rather than of a
 disabled mechanism — the mechanism itself is exercised under deliberate
 fault injection in §3.3.
+
+## 3.6 The measured DAG (figure)
+
+Figure 3.1 is a deterministic text figure assembled from the run's own JSON by
+`src/bond_orchestrator/manuscript_variables.py::_dag_figure`: each package
+carries its wavefront stage (from `stage_plan`), its debrief verdict, and each
+declared hand-off edge is labelled with the upstream recon `outputs` that
+actually crossed it. It is the §2.1 DAG as *measured*, so the figure and the
+engine are the same object rather than two accounts of it.
+
+```
+{{RESULT_DAG_FIGURE}}
+```
+
+The stage 1 → 2 → 3 chain and the two non-empty edges mirror the
+`{{RESULT_EXECUTION_ORDER}}` written in §3.1; the single-package-per-stage
+width confirms the serial shape §3.5 describes, and the labelled payloads are
+exactly the evidence §3.1 quoted in prose.

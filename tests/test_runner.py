@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from bond_orchestrator.missions import OPERATION_OMNIBUS
-from bond_orchestrator.protocol import MissionProvider
+from bond_orchestrator.protocol import Mission, MissionPackage, MissionProvider, mission_fingerprint
 from bond_orchestrator.providers import (
     DeterministicProvider,
     GoldfingerProvider,
@@ -156,6 +158,46 @@ class TestCheckpointResume:
         assert (state_dir / "execute_no_time_to_die.json").exists()
         manifest = (state_dir / "manifest.json").read_text()
         assert "debrief:no_time_to_die" in manifest
+
+    def test_manifest_records_definition_hash(self, tmp_path) -> None:
+        """The manifest binds a checkpoint dir to one mission definition (TODO C1)."""
+        checkpoint_dir = tmp_path / "state"
+        MissionRunner(dict_of_reference_providers(), checkpoint_dir=checkpoint_dir).run(OPERATION_OMNIBUS)
+        manifest = json.loads((checkpoint_dir / "OPERATION_OMNIBUS" / "manifest.json").read_text())
+        assert "definition_hash" in manifest
+        assert manifest["definition_hash"] == mission_fingerprint(OPERATION_OMNIBUS)
+
+    def test_resume_rejects_changed_mission_definition(self, tmp_path) -> None:
+        """Re-running a MUTATED mission against an existing checkpoint dir refuses.
+
+        The pre-round-2 runner read only manifest["steps"] and never compared
+        the mission definition, so editing a mission's depends_on edges and
+        re-running would silently replay stale steps describing a mission that
+        was never executed. Now the recorded definition_hash is compared and
+        the runner fails loudly (TODO C1).
+        """
+        checkpoint_dir = tmp_path / "state"
+        MissionRunner(dict_of_reference_providers(), checkpoint_dir=checkpoint_dir).run(OPERATION_OMNIBUS)
+        # Same name and package ids, but the no_time_to_die->goldeneye edge is
+        # removed: a genuinely different DAG over the same package set.
+        mutated = Mission(
+            name="OPERATION_OMNIBUS",
+            packages=(
+                MissionPackage(id="goldfinger", title="GOLDFINGER", objective="recon the gold market"),
+                MissionPackage(id="goldeneye", title="GOLDENEYE", objective="assess EMP resilience"),
+                MissionPackage(id="no_time_to_die", title="NO TIME TO DIE", objective="develop bioweapon countermeasure"),
+            ),
+        )
+        with pytest.raises(MissionError, match="different mission definition"):
+            MissionRunner(dict_of_reference_providers(), checkpoint_dir=checkpoint_dir).run(mutated)
+
+    def test_resume_accepts_unchanged_definition(self, tmp_path) -> None:
+        """An identical mission still resumes byte-identically (positive control)."""
+        checkpoint_dir = tmp_path / "state"
+        MissionRunner(dict_of_reference_providers(), checkpoint_dir=checkpoint_dir).run(OPERATION_OMNIBUS)
+        resumed = MissionRunner(dict_of_reference_providers(), checkpoint_dir=checkpoint_dir).run(OPERATION_OMNIBUS)
+        fresh = MissionRunner(dict_of_reference_providers()).run(OPERATION_OMNIBUS)
+        assert resumed.as_dict() == fresh.as_dict()
 
 
 class TripwireProvider(DeterministicProvider):
