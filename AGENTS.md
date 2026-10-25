@@ -77,7 +77,7 @@ flowchart TB
 
 ```bash
 # From the package directory (canonical gates)
-uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # CLI
 uv run python scripts/run_mission.py list
@@ -117,11 +117,12 @@ which uv does **not** install implicitly — request it with `--extra dev`.
 through `uvx` (uv's isolated tool runner), not `uv run`.
 
 ```bash
-# Setup — the gate tools are not runtime deps; they live in the `dev` extra
-uv sync --extra dev       # or pass `--extra dev` to any `uv run` command below
+# Setup — the gate tools are not runtime deps; they live in the `dev` extra, which
+# uv never installs implicitly and a bare `uv run` re-syncs away. Every `uv run`
+# pytest command in this section therefore carries `--extra dev`.
 
 # 1. The enforced gate — tests + ≥90% line/branch coverage on src/
-uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # 2. Lint + format check (uvx: neither tool is a declared dependency)
 uvx ruff check src/ scripts/ tests/
@@ -133,9 +134,9 @@ uvx mypy src/          # the required scope
 uvx mypy src/ scripts/ # scripts are typed too and must stay clean
 
 # 4. Focused runs while iterating
-uv run pytest tests/test_film_binding.py -v
-uv run pytest tests/ -k retry -v
-uv run pytest tests/ --cov=src --cov-report=term-missing   # find the gap
+uv run --extra dev pytest tests/test_film_binding.py -v
+uv run --extra dev pytest tests/ -k retry -v
+uv run --extra dev pytest tests/ --cov=src --cov-report=term-missing   # find the gap
 ```
 
 Additional invariant checks (all must report clean):

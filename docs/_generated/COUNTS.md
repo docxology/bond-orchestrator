@@ -23,7 +23,7 @@ of an actual gate run — no figure here is estimated or rounded.
 Commands:
 
 ```bash
-uv run pytest tests/ --cov=src --cov-fail-under=90     # the enforced gate
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90     # the enforced gate
 uv run coverage json -o cov.json                       # for the split figures
 ```
 
@@ -40,11 +40,11 @@ provenance run id.
 
 | Gate | Command | Result |
 |---|---|---|
-| ruff lint | `uv run ruff check src/ scripts/ tests/` | clean |
-| ruff format | `uv run ruff format --check src/ scripts/` | 15 files already formatted |
-| packaging + lineage gates | `uv run pytest tests/test_packaging.py` | 15 passed |
-| byte-determinism gates | `uv run pytest tests/test_determinism_bytes.py` | 10 passed |
-| mypy | `uv run mypy src/ scripts/` | no issues in 15 source files |
+| ruff lint | `uvx ruff check src/ scripts/ tests/` | clean |
+| ruff format | `uvx ruff format --check src/ scripts/` | 15 files already formatted |
+| packaging + lineage gates | `uv run --extra dev pytest tests/test_packaging.py` | 15 passed |
+| byte-determinism gates | `uv run --extra dev pytest tests/test_determinism_bytes.py` | 10 passed |
+| mypy | `uvx mypy src/ scripts/` | no issues in 15 source files |
 
 ## Source surface
 

@@ -44,7 +44,7 @@ generator takes a project root).
 - Live counts live in `docs/_generated/COUNTS.md`; never hardcode test totals
   or coverage % in prose.
 - `tests/` and `*/__init__.py` are omitted from coverage by config.
-- Run: `uv run pytest tests/ --cov=src --cov-fail-under=90`.
+- Run: `uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90`.
 
 ## What each test file covers
 

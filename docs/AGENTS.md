@@ -50,7 +50,8 @@ DAG 00). Every document is a constraint, not a suggestion.
 ## Verification Commands
 
 ```bash
-uv run pytest tests/ --cov=src --cov-fail-under=90 -q          # gate
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90 -q   # gate: dev extra,
+                                                                    # uv never installs it implicitly
 grep -r "unittest.mock\|MagicMock\|@patch\|create_autospec" tests/ || echo "Clean"
 grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ || echo "Clean"
 # Packaging + forked-scaffold-lineage gates. This replaced an `rg` one-liner
@@ -58,7 +59,7 @@ grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ || echo "Clean"
 # .template-export.json, now deleted) and the pattern matched its own text in
 # this file. Scope is documented in the module docstring — declared values and
 # .py sources only, not Markdown prose.
-uv run pytest tests/test_packaging.py -q
+uv run --extra dev pytest tests/test_packaging.py -q
 # ruff/mypy are not declared deps here — uvx is uv's isolated tool runner
 uvx ruff check src/ scripts/
 uvx mypy src/ scripts/

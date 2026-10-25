@@ -36,7 +36,7 @@ tests all re-run the identical mission.
 fails loudly (or refuses to resume) rather than replaying stale steps, driven
 by a recorded definition hash rather than the name alone, with a test that
 mutates a mission's `depends_on` between two runs and asserts the failure.
-*Command:* `uv run pytest tests/test_runner.py tests/test_determinism_bytes.py -v`
+*Command:* `uv run --extra dev pytest tests/test_runner.py tests/test_determinism_bytes.py -v`
 
 ### Verification
 
@@ -63,7 +63,7 @@ key sets, and fails when they diverge — in which case the prose must be
 rewritten to name the mapping, not an identity — or every site above is
 softened to what is true ("an independent, non-delegating provenance writer").
 Whichever is chosen, the claim and the gate must agree.
-*Command:* `uv run pytest tests/test_provenance.py -v`
+*Command:* `uv run --extra dev pytest tests/test_provenance.py -v`
 
 **V2 — the `requires-python = ">=3.10"` floor has never been exercised.**
 `pyproject.toml:16` declares the floor. Every gate this package has ever run
@@ -95,7 +95,7 @@ luck, not a gate.)
 coverage split and the interpreter from `coverage json` output and fails when
 the committed file disagrees — the same treatment the manuscript's `{{TOKEN}}`
 metrics already get.
-*Command:* `uv run pytest tests/ -k counts` (once the gate exists)
+*Command:* `uv run --extra dev pytest tests/ -k counts` (once the gate exists)
 
 ### Documentation
 
@@ -137,7 +137,7 @@ green without them.
 which film capabilities each exercises. `src/bond_orchestrator/cli.py:38-71`
 registers exactly three subcommands today (`run`, `plan`, `list`).
 *Done when:* the subcommand exists, exits 0, and its output is asserted in
-`tests/test_cli.py`. *Command:* `uv run pytest tests/test_cli.py -v`
+`tests/test_cli.py`. *Command:* `uv run --extra dev pytest tests/test_cli.py -v`
 
 **E2 — `--parallel` execution flag.** Run the packages within one wavefront
 stage concurrently while preserving stage order; sequential stays the default.
@@ -147,7 +147,7 @@ goes.
 *Done when:* every canned mission's report and checkpoint files are
 byte-identical under both modes, `tests/test_determinism_bytes.py` is
 parametrised over both, and no wall-clock value enters any artifact.
-*Command:* `uv run pytest tests/test_determinism_bytes.py tests/test_cli.py -v`
+*Command:* `uv run --extra dev pytest tests/test_determinism_bytes.py tests/test_cli.py -v`
 
 **E3 — One-shot regeneration orchestrator.** `scripts/` holds only
 `run_mission.py` and `generate_manuscript_variables.py`; rebuilding `output/`
@@ -155,14 +155,14 @@ takes two commands in the right order, and the second fails confusingly if the
 first was skipped.
 *Done when:* a single thin script runs mission → provenance → manuscript
 variables and is covered by `tests/test_scripts_smoke.py`.
-*Command:* `uv run pytest tests/test_scripts_smoke.py -v`
+*Command:* `uv run --extra dev pytest tests/test_scripts_smoke.py -v`
 
 **E4 — Optional wall-clock diagnostics.** Per-phase, per-package durations,
 runtime-only. Deliberately last: the constraint that they must never reach a
 persisted artifact is the whole reason this ranks below everything else.
 *Done when:* durations are printable at runtime and
 `tests/test_determinism_bytes.py` still passes unchanged with diagnostics on.
-*Command:* `uv run pytest tests/test_determinism_bytes.py -v`
+*Command:* `uv run --extra dev pytest tests/test_determinism_bytes.py -v`
 
 **E5 — Reference-provider coverage for the wider fleet.** The three canned
 missions in `src/bond_orchestrator/missions.py` bind six distinct packages. The
@@ -172,7 +172,7 @@ declares the authoritative roster at
 measured 27 slugs this session). Extend from that roster — never by
 hand-maintaining a second one here.
 *Done when:* mission coverage is derived from the coordinator roster and a test
-fails when the two disagree. *Command:* `uv run pytest tests/test_missions.py -v`
+fails when the two disagree. *Command:* `uv run --extra dev pytest tests/test_missions.py -v`
 
 **E6 — `provenance.py` delegates to `bond_utilities.mission_io`** (BOND-suite
 integration point 2). Blocked on V1: the two schemas differ, so "delegate" means
@@ -185,7 +185,7 @@ in a persisted artifact and the package's core determinism claim dies.
 *Done when:* records are written through `mission_io`, `bond-utilities` is a
 declared dependency, and `tests/test_provenance.py` +
 `tests/test_determinism_bytes.py` are green unchanged.
-*Command:* `uv run pytest tests/test_provenance.py tests/test_determinism_bytes.py -v`
+*Command:* `uv run --extra dev pytest tests/test_provenance.py tests/test_determinism_bytes.py -v`
 
 **E7 — Mission hand-off from `bond-coordinator`** (integration point 3).
 Blocked upstream, not here: the coordinator's public surface
@@ -196,7 +196,7 @@ Blocked upstream, not here: the coordinator's public surface
 *Done when:* a coordinator-produced `Mission` (same shape as
 `src/bond_orchestrator/protocol.py`) executes through `MissionRunner` with no
 orchestrator change, proven by a test that imports it from `bond_coordinator`.
-*Command:* `uv run pytest tests/test_integration.py -v`
+*Command:* `uv run --extra dev pytest tests/test_integration.py -v`
 
 ## Known limitations (not bugs)
 
@@ -244,20 +244,20 @@ on 2026-08-05.
 
 ```bash
 # 1. The enforced gate: full suite + >=90% line+branch coverage on src/
-uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 #    expected: 173 passed, 0 skipped; "Required test coverage of 90% reached"
 
 # 2. Lint + format + types
-uv run ruff check src/ scripts/ tests/          # expected: All checks passed!
-uv run ruff format --check src/ scripts/        # expected: 15 files already formatted
-uv run mypy src/ scripts/                       # expected: no issues in 15 source files
+uvx ruff check src/ scripts/ tests/          # expected: All checks passed!
+uvx ruff format --check src/ scripts/        # expected: 15 files already formatted
+uvx mypy src/ scripts/                       # expected: no issues in 15 source files
 
 # 3. Honesty gates, individually
-uv run pytest tests/test_packaging.py -v         # declared-vs-imported deps, relative
+uv run --extra dev pytest tests/test_packaging.py -v         # declared-vs-imported deps, relative
                                                  # bond-api path, no fork slug in values/.py
-uv run pytest tests/test_determinism_bytes.py -v # two fresh runs byte-identical, plus a
+uv run --extra dev pytest tests/test_determinism_bytes.py -v # two fresh runs byte-identical, plus a
                                                  # positive control for 1-byte drift
-uv run pytest tests/test_film_binding.py -v      # REAL sibling films; no skipif — RED if absent
+uv run --extra dev pytest tests/test_film_binding.py -v      # REAL sibling films; no skipif — RED if absent
 
 # 4. Layer contract (the pure core must stay liftable)
 grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ || echo "Clean — pure core"
@@ -317,10 +317,10 @@ trusting them.
 
 | Gate | Result |
 |---|---|
-| `uv run pytest tests/ --cov=src --cov-fail-under=90` | **178 passed, 0 skipped, 0 failed; 99.03%** combined line+branch (baseline 173 / 98.96%) |
-| `uv run ruff check src/ scripts/ tests/` | clean |
-| `uv run ruff format --check src/ scripts/` | clean (15 files) |
-| `uv run mypy src/ scripts/` | no issues in 15 source files |
+| `uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90` | **178 passed, 0 skipped, 0 failed; 99.03%** combined line+branch (baseline 173 / 98.96%) |
+| `uvx ruff check src/ scripts/ tests/` | clean |
+| `uvx ruff format --check src/ scripts/` | clean (15 files) |
+| `uvx mypy src/ scripts/` | no issues in 15 source files |
 | honesty greps (no mocks, pure core, no module-scope `bond_api`) | clean |
 
 Live counts updated in [`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md)

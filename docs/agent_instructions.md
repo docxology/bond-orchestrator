@@ -37,7 +37,7 @@ The enforced gate is `pyproject.toml`'s `fail_under = 90` on line **and**
 branch coverage over `src/` (the whole package, not just one module). Run:
 
 ```bash
-uv run pytest tests/ --cov=src --cov-fail-under=90 --cov-report=term-missing
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90 --cov-report=term-missing
 ```
 
 If coverage drops, do not delete tests to make the number work — fix the gap.
@@ -171,11 +171,11 @@ Run all of these before submitting any change:
 
 ```bash
 # 0. Setup — the gate tools are not runtime deps; pytest/coverage live in the
-#    `dev` extra, which uv does not install implicitly
-uv sync --extra dev
+#    `dev` extra, which uv does not install implicitly and a bare `uv run`
+#    re-syncs away — so the pytest commands here ask for it explicitly
 
 # 1. Tests pass and coverage gate is met
-uv run pytest tests/ --cov=src --cov-fail-under=90 -q
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90 -q
 
 # 2. No mocks anywhere in tests/
 grep -r "unittest.mock\|MagicMock\|@patch\|create_autospec" tests/ \
@@ -190,7 +190,7 @@ grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ \
 #    dependencies, relative bond-api path, no exemplar slug in any declared
 #    value or .py source). Replaces an `rg` one-liner that skipped dotfiles
 #    and matched its own text, so it could never report Clean.
-uv run pytest tests/test_packaging.py -q
+uv run --extra dev pytest tests/test_packaging.py -q
 
 # 5. No module-scope bond_api import (the pure core must stay liftable)
 grep -rnE "^(from|import) bond_api" src/bond_orchestrator/ \

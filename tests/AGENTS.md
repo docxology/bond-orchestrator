@@ -39,8 +39,8 @@ all with real data and real computation. **Zero mocks.**
 ## Commands
 
 ```bash
-uv run pytest tests/ -v
-uv run pytest tests/ --cov=src --cov-fail-under=90 --cov-report=term-missing
+uv run --extra dev pytest tests/ -v
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90 --cov-report=term-missing
 ```
 
 Live test count + measured coverage: [`../docs/_generated/COUNTS.md`](../docs/_generated/COUNTS.md).

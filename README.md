@@ -49,7 +49,7 @@ is imported lazily only when real films are bound.
 
 ```bash
 # From the package directory
-uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # List canned missions
 uv run python scripts/run_mission.py list
@@ -173,10 +173,9 @@ deliberately not quoted here, so this file cannot go stale.
 
 ```bash
 # Setup — the gate tools are not runtime deps: pytest/coverage live in the `dev`
-# optional-dependency extra, which uv never installs implicitly.
-uv sync --extra dev       # or pass `--extra dev` to any `uv run` command below
-
-uv run pytest tests/ --cov=src --cov-fail-under=90
+# optional-dependency extra. uv never installs extras implicitly, and a bare
+# `uv run` re-syncs them away, so each gate command asks for the extra itself.
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # ruff and mypy are not declared in this package's pyproject.toml — run them via
 # uvx. No ruff config is committed here, so the 120-column house rule

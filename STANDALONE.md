@@ -85,7 +85,7 @@ exists in this tree.
 cd projects/working/bond/bond-orchestrator
 
 # Enforced gate: tests + >=90% line+branch coverage on src/
-uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # Regenerate the flagship mission run and its provenance
 uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
@@ -95,7 +95,7 @@ uv run python scripts/generate_manuscript_variables.py
 
 # Honesty gates: forked-lineage strings, declared-vs-imported dependencies,
 # and the presence of the real film packages the manuscript cites
-uv run pytest tests/test_packaging.py -v
+uv run --extra dev pytest tests/test_packaging.py -v
 ```
 
 ## Not Standalone: real dependencies of this package

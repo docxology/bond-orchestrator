@@ -16,9 +16,9 @@ project.
 ## Quick Reference
 
 ```bash
-# From the package directory
-uv sync --extra dev                              # gate tools live in the `dev` extra
-uv run pytest tests/ --cov=src --cov-fail-under=90
+# From the package directory. Dev tools live in the `dev` extra, which uv never
+# installs implicitly (a bare `uv run` re-syncs them away) — hence `--extra dev`.
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 uv run python scripts/run_mission.py list
 uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
 uv run python scripts/generate_manuscript_variables.py

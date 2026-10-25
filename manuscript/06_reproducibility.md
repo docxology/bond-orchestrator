@@ -26,14 +26,14 @@ Determinism is a hard contract, not a preference:
 
 ```bash
 # Enforced gate: tests + ≥90% line+branch coverage on src/
-uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # No mocks anywhere in tests/
 grep -r "unittest.mock\|MagicMock\|@patch\|create_autospec" tests/ || echo "Clean"
 
 # Packaging + lineage honesty gates (declared-vs-imported dependencies, a
 # relative bond-api path, no forked-scaffold slug in any declared value)
-uv run pytest tests/test_packaging.py -v
+uv run --extra dev pytest tests/test_packaging.py -v
 
 # Reproduce the flagship run + provenance
 uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
