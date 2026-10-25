@@ -5,11 +5,11 @@ executes a DAG of film packages through five lifecycle phases
 (`brief → recon → plan → execute → debrief`) in canonical topological order over
 the `MissionProvider` protocol, with checkpoint/resume, a bounded backoff-free
 retry policy, wavefront stage planning, provenance records, and `{{TOKEN}}`
-hydration for the manuscript. Measured this session (2026-08-05, CPython
-3.14.6, darwin): **173 tests passed, 0 skipped, 0 failed**; **98.96 % combined
-line+branch coverage** on `src/` against a 90 % floor
-(`uv run pytest tests/ --cov=src --cov-fail-under=90`); `ruff check`,
-`ruff format --check` and `mypy src/ scripts/` all clean. Everything the
+hydration for the manuscript. Measured figures for the enforced gate live in
+[`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md) — the package rule is
+that no measured number is restated in prose, and this header had gone stale,
+quoting a pre-round-2 test count that both the round-2 table below and
+`COUNTS.md` had already superseded. Everything the
 phase-6 adversarial audit flagged as SEVERE or MODERATE is closed on disk —
 the false DOI, the non-existent repository, the inherited archival locations,
 the `skipif`-gated film tests, the un-forked `STANDALONE.md`, the hand-authored

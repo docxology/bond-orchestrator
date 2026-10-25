@@ -170,6 +170,10 @@ regeneration sequence.
 Run all of these before submitting any change:
 
 ```bash
+# 0. Setup — the gate tools are not runtime deps; pytest/coverage live in the
+#    `dev` extra, which uv does not install implicitly
+uv sync --extra dev
+
 # 1. Tests pass and coverage gate is met
 uv run pytest tests/ --cov=src --cov-fail-under=90 -q
 
@@ -193,10 +197,10 @@ grep -rnE "^(from|import) bond_api" src/bond_orchestrator/ \
     && echo "VIOLATION — bond_api imported at module scope" \
     || echo "Clean — bond_api is lazy-imported only"
 
-# 6. Lint, format, types
-uv run ruff check src/ scripts/ tests/
-uv run ruff format --check src/ scripts/
-uv run mypy src/ scripts/
+# 6. Lint, format, types (ruff/mypy are not declared deps — uvx runs them)
+uvx ruff check src/ scripts/ tests/
+uvx ruff format --check --line-length 120 src/ scripts/   # 120-col house rule
+uvx mypy src/ scripts/
 ```
 
 All six must produce zero violations (or the "Clean" message).

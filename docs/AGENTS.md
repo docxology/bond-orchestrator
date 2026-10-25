@@ -59,8 +59,9 @@ grep -rnE "^(from|import) infrastructure" src/bond_orchestrator/ || echo "Clean"
 # this file. Scope is documented in the module docstring — declared values and
 # .py sources only, not Markdown prose.
 uv run pytest tests/test_packaging.py -q
-uv run ruff check src/ scripts/
-uv run mypy src/ scripts/
+# ruff/mypy are not declared deps here — uvx is uv's isolated tool runner
+uvx ruff check src/ scripts/
+uvx mypy src/ scripts/
 ```
 
 ## REQUIRED vs CONVENTION

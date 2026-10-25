@@ -12,7 +12,11 @@ Applies to every module in `src/bond_orchestrator/` (and, by extension,
 4. **Docstrings** — module docstring (purpose + contracts), one-line or
    multi-line docstrings on all public functions/classes; Google-ish style.
 5. **Error messages** — actionable, name the offending value and the options.
-6. **Line length** — ≤120 (root `ruff` config); `uv run ruff format` clean.
+6. **Line length** — ≤120, the house rule. No ruff config is committed in this
+   standalone checkout (`pyproject.toml` has no `[tool.ruff]` section and there
+   is no `ruff.toml`), so pass the rule explicitly:
+   `uvx ruff format --check --line-length 120 src/ scripts/` is clean; at the
+   formatter's 88-column default it reports the committed files as unformatted.
 7. **I/O placement** — checkpoint layer in `runner.py`, records in
    `provenance.py`, token map in `manuscript_variables.py`, output
    persistence in `cli.py`; providers do no I/O.

@@ -17,12 +17,13 @@ project.
 
 ```bash
 # From the package directory
+uv sync --extra dev                              # gate tools live in the `dev` extra
 uv run pytest tests/ --cov=src --cov-fail-under=90
 uv run python scripts/run_mission.py list
 uv run python scripts/run_mission.py OPERATION_OMNIBUS --checkpoint-dir output/state
 uv run python scripts/generate_manuscript_variables.py
-uv run ruff check src/ scripts/
-uv run mypy src/ scripts/
+uvx ruff check src/ scripts/                     # ruff/mypy are not declared deps
+uvx mypy src/ scripts/
 ```
 
 ## Pitfalls

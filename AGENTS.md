@@ -109,23 +109,28 @@ print(report.consolidated_debrief())   # single debrief
 ## Build / test / verify
 
 There is no build step — the package is pure Python plus `pyyaml`. `uv sync`
-installs the dev extras and the local `bond-api` path dependency declared in
-`pyproject.toml` (`[tool.uv.sources]`).
+installs the runtime dependencies and the local `bond-api` path dependency
+declared in `pyproject.toml` (`[tool.uv.sources]`); the dev tooling
+(`pytest`, `pytest-cov`, `numpy`) lives in the `dev` optional-dependency extra,
+which uv does **not** install implicitly — request it with `--extra dev`.
+`ruff` and `mypy` are not declared in `pyproject.toml` at all, so they are run
+through `uvx` (uv's isolated tool runner), not `uv run`.
 
 ```bash
-# Setup
-uv sync
+# Setup — the gate tools are not runtime deps; they live in the `dev` extra
+uv sync --extra dev       # or pass `--extra dev` to any `uv run` command below
 
-# 1. The enforced gate — tests + ≥90% line+branch coverage on src/
+# 1. The enforced gate — tests + ≥90% line/branch coverage on src/
 uv run pytest tests/ --cov=src --cov-fail-under=90
 
-# 2. Lint + format check
-uv run ruff check src/ scripts/ tests/
-uv run ruff format --check src/ scripts/
+# 2. Lint + format check (uvx: neither tool is a declared dependency)
+uvx ruff check src/ scripts/ tests/
+uvx ruff format --check --line-length 120 src/ scripts/   # 120-col house rule; no
+                                                         # [tool.ruff] is committed here
 
 # 3. Types
-uv run mypy src/          # the required scope
-uv run mypy src/ scripts/ # scripts are typed too and must stay clean
+uvx mypy src/          # the required scope
+uvx mypy src/ scripts/ # scripts are typed too and must stay clean
 
 # 4. Focused runs while iterating
 uv run pytest tests/test_film_binding.py -v

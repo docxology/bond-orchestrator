@@ -172,9 +172,18 @@ live in [`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md) and are
 deliberately not quoted here, so this file cannot go stale.
 
 ```bash
+# Setup — the gate tools are not runtime deps: pytest/coverage live in the `dev`
+# optional-dependency extra, which uv never installs implicitly.
+uv sync --extra dev       # or pass `--extra dev` to any `uv run` command below
+
 uv run pytest tests/ --cov=src --cov-fail-under=90
-uv run ruff check src/ scripts/ && uv run ruff format --check src/ scripts/
-uv run mypy src/
+
+# ruff and mypy are not declared in this package's pyproject.toml — run them via
+# uvx. No ruff config is committed here, so the 120-column house rule
+# (src/STYLE.md rule 6) has to be passed to the formatter explicitly.
+uvx ruff check src/ scripts/ tests/
+uvx ruff format --check --line-length 120 src/ scripts/
+uvx mypy src/
 ```
 
 ## Documentation
