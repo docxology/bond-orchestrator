@@ -13,7 +13,7 @@ description = "BOND-ORCHESTRATOR (DAG 00): Layer 3 mission DAG runner — multi-
 authors = [
     {name = "Daniel Ari Friedman", email = "daniel@activeinference.institute"}
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 # Runtime dependencies are exactly what src/ imports. numpy, matplotlib and
 # defusedxml were inherited from the template_code_project fork and imported
 # nowhere in this package; they were removed rather than left as decoration.
