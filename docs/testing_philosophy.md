@@ -31,7 +31,7 @@ computes**:
 | `FlakyExecuteDecorator` | `tests/test_retry.py` | Wraps a *real* provider (reference or film adapter) and fails its first N `execute` calls by counting them — deterministic fault injection, then delegates to the real implementation |
 | `TripwireProvider`, `RecordingProvider`, `InterruptedNoTimeToDieProvider` | `tests/test_runner.py` | Real providers that additionally record which steps ran, or raise mid-run to force a genuine interrupted-then-resumed execution |
 | The malformed probe film | `tests/test_film_binding.py` | A real package tree on disk with a real `mission.py` that genuinely exposes no provider class, so bond-api's real discovery raises |
-| The film packages themselves | `projects/working/bond/<slug>` | Not stand-ins at all — `tests/test_film_binding.py` imports and runs the actual shipped films |
+| The film packages themselves | `projects/working/bond/bond-<slug>` | Not stand-ins at all — `tests/test_film_binding.py` imports and runs the actual shipped films |
 
 `pytest.MonkeyPatch` is not used anywhere; dependencies are injected instead
 (the runner takes a providers mapping, the CLI takes `argv`, the variable
