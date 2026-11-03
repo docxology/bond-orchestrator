@@ -197,6 +197,17 @@ all-verdicts-pass, which is exactly the failure a strict loader exists to
 prevent. `load_mission_providers(mission, bond_root)` binds every package a
 `Mission` declares.
 
+**Naming.** A film's two names differ, and `film_package_dir(bond_root, slug)`
+is the one place that knows it: the **repository** directory carries the
+`bond-` prefix (`<bond_root>/bond-goldfinger`) while the **package** inside its
+`src/` keeps the bare slug (`src/goldfinger/mission.py`). The loader and the
+film-binding gate both resolve through that helper, so they cannot disagree
+about where a film lives; a bare `<slug>` directory is still accepted for a
+checkout that stages the package without the prefix, and when neither is present
+the error names the canonical `bond-<slug>` path. Before this helper existed the
+slug was joined straight onto `bond_root`, which named a directory that has never
+existed in the suite and made the gate report all four required films as absent.
+
 **Laziness.** `from bond_api... import ...` appears only inside function
 bodies. Importing `bond_orchestrator` never imports `bond_api`, so the pure
 core stays liftable.

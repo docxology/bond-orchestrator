@@ -43,6 +43,7 @@ from .protocol import (
 __all__ = [
     "FilmProviderAdapter",
     "FilmProviderError",
+    "film_package_dir",
     "load_film_providers",
     "load_mission_providers",
 ]
@@ -182,11 +183,36 @@ class FilmProviderAdapter:
         )
 
 
+def film_package_dir(bond_root: Path, slug: str) -> Path:
+    """The directory that holds a film package inside ``bond_root``.
+
+    The two names are not the same name: every film **repository** carries the
+    ``bond-`` prefix while the **package** inside its ``src/`` keeps the bare
+    slug, so ``bond_root / slug`` names a directory that does not exist. A bare
+    ``<slug>`` directory is still accepted, for a checkout that stages the
+    package without the repository prefix, and when neither is present the
+    canonical ``bond-<slug>`` path is returned so the error names the layout
+    this suite actually uses.
+
+    Args:
+        bond_root: The PROJECT BOND workspace root (parent of every film dir).
+        slug: The film slug (e.g. ``"goldfinger"``).
+
+    Returns:
+        The film's directory, resolved by checking for its ``mission.py``.
+    """
+    candidates = (bond_root / f"bond-{slug}", bond_root / slug)
+    for candidate in candidates:
+        if (candidate / "src" / slug / "mission.py").is_file():
+            return candidate
+    return candidates[0]
+
+
 def load_film_providers(
     slugs: Iterable[str],
     bond_root: Path,
 ) -> dict[str, FilmProviderAdapter]:
-    """Load real film providers from ``<bond_root>/<slug>/src`` as adapters.
+    """Load real film providers from ``<bond_root>/bond-<slug>/src`` as adapters.
 
     Args:
         slugs: Film slugs to bind (e.g. ``("goldfinger", "goldeneye")``).
@@ -204,7 +230,7 @@ def load_film_providers(
 
     adapters: dict[str, FilmProviderAdapter] = {}
     for slug in slugs:
-        search = bond_root / slug / "src"
+        search = film_package_dir(bond_root, slug) / "src"
         if not (search / slug / "mission.py").is_file():
             raise FilmProviderError(f"film package {slug!r} not built: {search / slug / 'mission.py'} missing")
         try:

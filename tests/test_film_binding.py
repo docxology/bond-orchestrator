@@ -23,6 +23,7 @@ import pytest
 from bond_orchestrator.film_providers import (
     FilmProviderAdapter,
     FilmProviderError,
+    film_package_dir,
     load_film_providers,
     load_mission_providers,
 )
@@ -44,9 +45,25 @@ REAL_OMNIBUS_FILMS = ("goldfinger", "goldeneye", "no_time_to_die")
 REQUIRED_FILMS = tuple(sorted(set(REAL_FILMS) | set(REAL_OMNIBUS_FILMS)))
 
 
+#: Every film directory in the suite carries this prefix while the package
+#: inside ``src/`` keeps the bare slug, so ``BOND / slug`` names a directory
+#: that has never existed here.
+FILM_DIR_PREFIX = "bond-"
+
+
+def film_dir(slug: str) -> Path:
+    """The film's directory, resolved exactly as :func:`load_film_providers` resolves it."""
+    return film_package_dir(BOND, slug)
+
+
+def required_film_paths() -> dict[str, Path]:
+    """The ``mission.py`` this gate requires for each slug, resolved on disk."""
+    return {slug: film_dir(slug) / "src" / slug / "mission.py" for slug in REQUIRED_FILMS}
+
+
 def missing_film_packages() -> tuple[str, ...]:
     """Slugs among :data:`REQUIRED_FILMS` with no ``src/<slug>/mission.py`` on disk."""
-    return tuple(slug for slug in REQUIRED_FILMS if not (BOND / slug / "src" / slug / "mission.py").is_file())
+    return tuple(slug for slug, path in required_film_paths().items() if not path.is_file())
 
 
 # NO module-level skipif.
@@ -63,6 +80,15 @@ def missing_film_packages() -> tuple[str, ...]:
 # below, and the fact that every test here calls into the real packages and
 # raises when they are gone.  A fork that cannot supply the film packages must
 # delete this module *and* manuscript §3.3, not silence it.
+#
+# Which paths that gate looks at is part of its correctness.  A film
+# *directory* carries the ``bond-`` prefix (``<workspace>/bond-goldfinger``)
+# while the *package* inside its ``src/`` keeps the bare slug, and joining the
+# bare slug onto the workspace root made this gate report all four required
+# films as absent -- eleven failures caused by the assertion, not by the claim
+# it defends.  Both the test and ``load_film_providers`` now resolve the
+# directory through ``film_package_dir``, so the gate and the loader cannot
+# disagree about where a film lives.
 
 
 class TestRealFilmEvidenceIsRequired:
@@ -72,10 +98,27 @@ class TestRealFilmEvidenceIsRequired:
         missing = missing_film_packages()
         assert REQUIRED_FILMS, "the required-film list is empty; this gate would be vacuous"
         assert not missing, (
-            f"real film packages missing from {BOND}: {missing}. "
+            f"real film packages missing from {BOND}: {missing} "
+            f"(looked for {[str(required_film_paths()[slug]) for slug in missing]}). "
             "Manuscript §3.3, AGENTS.md and TODO.md claim the orchestrator is wired to REAL "
             "film packages; without these packages that claim has no evidence. Either restore "
             "them or delete the claim -- do not skip this test."
+        )
+
+    def test_required_film_packages_resolve_to_the_fleet_layout(self) -> None:
+        """Name the layout this gate resolved, so the claim stays checkable.
+
+        These eleven tests first failed as one assertion about a layout that has
+        never existed: the slug was joined straight onto the workspace root
+        (``<root>/goldfinger``) while every film directory carries the ``bond-``
+        prefix, so ``missing_film_packages()`` reported all four required films
+        as absent. The repair resolves the real names; this test keeps that
+        resolution stated rather than implied, and goes red if a film directory
+        is ever renamed away from the convention the loader searches.
+        """
+        resolved = {slug: film_dir(slug).name for slug in REQUIRED_FILMS}
+        assert all(name == f"{FILM_DIR_PREFIX}{slug}" for slug, name in resolved.items()), (
+            f"film packages resolved to directories outside the fleet naming: {resolved}"
         )
 
 
