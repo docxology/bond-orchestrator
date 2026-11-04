@@ -1,5 +1,6 @@
 # Code Project Configuration
-# Inherits workspace settings from root pyproject.toml
+# Self-contained: no ancestor pyproject.toml declares [tool.ruff] or [tool.mypy], so
+# every tool setting this checkout obeys is in this file.
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -82,8 +83,10 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-# Self-contained mypy config (root template config also applies when run from
-# the template root; types-PyYAML is installed in the dev env either way).
+# Self-contained mypy config: no ancestor pyproject.toml declares [tool.mypy], so
+# this table is the effective one. The `yaml` override at the end supplies
+# ignore_missing_imports, so no stub package is needed — types-PyYAML is in neither
+# the dev extra nor the lock (measured).
 # Vendored copies are a dependency; their bytes are bound by scripts/vendor.py.
 exclude = ["(^|/)vendor/"]
 python_version = "3.12"
@@ -102,8 +105,16 @@ module = "yaml"
 ignore_missing_imports = true
 
 [tool.uv]
-# Inherits workspace settings from root pyproject.toml
+# Nothing is inherited here: the only pyproject.toml above this checkout belongs to
+# the vault manager project and is not this project's workspace root, and this
+# repository carries its own lock.
 
 [tool.ruff]
 # The vendored copies are byte-identical to upstream and must stay that way.
 extend-exclude = ["vendor"]
+# The width this tree is written to, measured: with this line the documented format
+# gate reports 20 files already formatted and the documented check reports 28
+# findings; with the line removed (the formatter's default) it reports 11 files
+# that would be reformatted and 31 findings. Committed so the width travels with
+# the checkout — ruff selects the nearest config and merges nothing.
+line-length = 120
