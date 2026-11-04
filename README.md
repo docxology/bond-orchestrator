@@ -147,7 +147,7 @@ carry no DAG concepts at all. `film_providers.py` adapts between the two:
 from pathlib import Path
 from bond_orchestrator import MissionRunner, load_film_providers, load_mission_providers
 
-BOND = Path("projects/working/bond")
+BOND = Path("..").resolve()  # the directory holding the bond-* film packages: this checkout's parent
 
 # Bind a slug list …
 adapters = load_film_providers(("goldfinger", "goldeneye", "no_time_to_die"), BOND)
@@ -178,9 +178,10 @@ deliberately not quoted here, so this file cannot go stale.
 uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # ruff and mypy are not declared in this package's pyproject.toml — run them via
-# uvx. No ruff config is committed here, so the 120-column house rule
-# (src/STYLE.md rule 6) has to be passed to the formatter explicitly.
-uvx ruff check src/ scripts/ tests/
+# uvx. The 120-column house rule (src/STYLE.md rule 6) is committed as
+# [tool.ruff] line-length = 120; the formatter still gets the width explicitly so
+# this command measures the tree rather than the table.
+uvx ruff check src/ scripts/ tests/          # expected: 28 findings, all pre-existing
 uvx ruff format --check --line-length 120 src/ scripts/
 uvx mypy src/
 ```

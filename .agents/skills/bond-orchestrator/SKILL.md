@@ -1,8 +1,7 @@
 # bond-orchestrator skill
 
-Project-scoped skill for the BOND-suite package at
-`projects/working/bond/bond-orchestrator/`. Load this when working inside the
-project.
+Project-scoped skill for the BOND-suite `bond-orchestrator` package. Load this
+when working inside the project.
 
 ## When to Use
 

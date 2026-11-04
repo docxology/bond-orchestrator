@@ -60,7 +60,7 @@ deterministic providers, and project-local tests.
 rsync -a \
   --exclude '.venv/' --exclude '.pytest_cache/' --exclude '.ruff_cache/' \
   --exclude 'build/' --exclude 'htmlcov/' --exclude 'output/' --exclude '*.egg-info/' \
-  projects/working/bond/bond-orchestrator/ projects/working/my_code_project/
+  "$(git rev-parse --show-toplevel)/" ../my_code_project/
 ```
 
 ## Required Post-Fork Edits
@@ -72,8 +72,8 @@ rsync -a \
   documented above.
 - Replace the mission registry, providers, and manuscript variables with the
   fork's orchestration code.
-- Repoint `[tool.uv.sources].bond-api` (a relative path to the sibling
-  `bond-api` package) or drop it if the fork does not bind real film packages.
+- Repoint `[tool.uv.sources].bond-api` (the recorded copy at `vendor/bond-api`;
+  see `VENDOR.md`) or drop it if the fork does not bind real film packages.
 - Regenerate mission outputs before updating manuscript result claims.
 
 ## Validation Commands
@@ -82,7 +82,7 @@ These are the commands this package actually ships; each one names a file that
 exists in this tree.
 
 ```bash
-cd projects/working/bond/bond-orchestrator
+cd "$(git rev-parse --show-toplevel)"
 
 # Enforced gate: tests + >=90% line+branch coverage on src/
 uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
@@ -102,8 +102,8 @@ uv run --extra dev pytest tests/test_packaging.py -v
 
 This package is **not** infrastructure-free and does not claim to be.
 
-- `bond-api` is a declared path dependency (`[tool.uv.sources]`, a relative
-  path to the sibling package). The pure core (`graph`, `planning`, `protocol`,
+- `bond-api` is a declared path dependency (`[tool.uv.sources]`, the recorded
+  copy at `vendor/bond-api`). The pure core (`graph`, `planning`, `protocol`,
   `providers`, `retry`, `runner`, `provenance`, `missions`) never imports it;
   only `film_providers.py` does, lazily.
 - The real-film tests (`tests/test_film_binding.py`) read the sibling

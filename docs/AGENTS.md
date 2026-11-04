@@ -1,7 +1,7 @@
 # docs/ — Agent-Facing Documentation Hub
 
-Technical rulebook for agents and developers working inside
-`projects/working/bond/bond-orchestrator/` (BOND-ORCHESTRATOR, codename
+Technical rulebook for agents and developers working inside the
+`bond-orchestrator` package (BOND-ORCHESTRATOR, codename
 DAG 00). Every document is a constraint, not a suggestion.
 
 ## File Inventory
@@ -71,6 +71,8 @@ uvx mypy src/ scripts/
 |---|---|
 | `src/bond_orchestrator/*.py` | REQUIRED (coverage gate; all modules exercised) |
 | `scripts/run_mission.py`, `scripts/generate_manuscript_variables.py` | REQUIRED (thin orchestrators; CLI path) |
+| `scripts/vendor.py` | REQUIRED (recorded-copy checker; run by `tests/test_vendor_provenance.py`) |
+| `vendor/bond-api/` | REQUIRED (recorded upstream copy of the `bond-api` protocol; `PROVENANCE.json` binds its bytes) |
 | `tests/` (all `test_*.py`) | REQUIRED (90% line+branch gate) |
 | `tests/conftest.py` | REQUIRED (path bootstrap + fixtures) |
 | `manuscript/config.yaml` + `manuscript/*.md` | REQUIRED (token cross-ref test) |

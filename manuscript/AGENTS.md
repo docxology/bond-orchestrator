@@ -4,7 +4,7 @@ type: "manuscript_guide"
 version: "2.5.2"
 ---
 
-# Manuscript (`projects/working/bond/bond-orchestrator/manuscript/`)
+# Manuscript (`manuscript/`)
 
 Repository-wide agent rules live in [`../docs/agent_instructions.md`](../docs/agent_instructions.md).
 This file covers **manuscript-specific** editing: file roles, `{{VARIABLE}}`

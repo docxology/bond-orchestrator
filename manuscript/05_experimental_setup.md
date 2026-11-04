@@ -33,8 +33,8 @@ the manuscript-variable pipeline (`scripts/generate_manuscript_variables.py`
   `source = ["src"]`)
 - `ruff` (lint + format check) and `mypy` clean on `src/` and `scripts/`
 - Runtime dependencies of the pure core: the standard library plus `pyyaml`
-  (config parsing only). `bond-api` is a declared path dependency (a relative
-  path to the sibling package), imported lazily and required only when real
+  (config parsing only). `bond-api` is a declared path dependency (the recorded
+  copy at `vendor/bond-api`), imported lazily and required only when real
   film packages are bound (§2.6). This sentence is enforced, not asserted:
   `tests/test_packaging.py` parses `pyproject.toml`, walks the import
   statements of `src/` and `scripts/` with the AST, and fails if a declared
