@@ -33,7 +33,7 @@ dependencies = [
 # home directory and breaks every other checkout. Resolved relative to this
 # pyproject.toml. Gated by tests/test_packaging.py::test_bond_api_source_is_relative.
 [tool.uv.sources]
-bond-api = { path = "../bond-api" }
+bond-api = { path = "vendor/bond-api" }
 
 [project.optional-dependencies]
 dev = [
@@ -84,6 +84,8 @@ exclude_lines = [
 [tool.mypy]
 # Self-contained mypy config (root template config also applies when run from
 # the template root; types-PyYAML is installed in the dev env either way).
+# Vendored copies are a dependency; their bytes are bound by scripts/vendor.py.
+exclude = ["(^|/)vendor/"]
 python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
@@ -101,3 +103,7 @@ ignore_missing_imports = true
 
 [tool.uv]
 # Inherits workspace settings from root pyproject.toml
+
+[tool.ruff]
+# The vendored copies are byte-identical to upstream and must stay that way.
+extend-exclude = ["vendor"]
