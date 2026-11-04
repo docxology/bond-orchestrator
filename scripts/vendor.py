@@ -95,13 +95,10 @@ class Manifest:
             raise SystemExit(f"{path}: missing key(s) {', '.join(missing)}")
         copied = raw["copied_paths"]
         hashes = raw["sha256"]
-        if not isinstance(copied, list) or not all(
-            isinstance(item, str) for item in copied
-        ):
+        if not isinstance(copied, list) or not all(isinstance(item, str) for item in copied):
             raise SystemExit(f"{path}: copied_paths must be a list of strings")
         if not isinstance(hashes, dict) or not all(
-            isinstance(key, str) and isinstance(value, str)
-            for key, value in hashes.items()
+            isinstance(key, str) and isinstance(value, str) for key, value in hashes.items()
         ):
             raise SystemExit(f"{path}: sha256 must map paths to digests")
         return cls(
@@ -124,11 +121,7 @@ class Manifest:
         return sorted(str(path.relative_to(self.directory)) for path in found)
 
     def note_text(self) -> str:
-        metadata = [
-            name
-            for name in self.copied_paths
-            if not name.startswith(f"{self.module_path}/")
-        ]
+        metadata = [name for name in self.copied_paths if not name.startswith(f"{self.module_path}/")]
         listed = ", ".join(f"`{name}`" for name in metadata)
         return f"""{SHA_MARKER.format(sha=self.sha)}
 # Vendored `{self.package}`
@@ -163,10 +156,7 @@ this package's own gate.
 
 def record(manifest: Manifest) -> None:
     """Write the manifest and its human note from the copy as it stands on disk."""
-    names = sorted(
-        [name for name in METADATA_FILES if (manifest.directory / name).is_file()]
-        + manifest.module_tree()
-    )
+    names = sorted([name for name in METADATA_FILES if (manifest.directory / name).is_file()] + manifest.module_tree())
     hashes = {name: sha256(manifest.directory / name) for name in names}
     manifest.copied_paths = names
     manifest.sha256 = hashes
@@ -183,9 +173,7 @@ def record(manifest: Manifest) -> None:
         "checker_sha256": manifest.checker_sha256,
     }
     manifest.path.write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8")
-    (manifest.directory / VENDOR_NOTE).write_text(
-        manifest.note_text(), encoding="utf-8"
-    )
+    (manifest.directory / VENDOR_NOTE).write_text(manifest.note_text(), encoding="utf-8")
 
 
 def manifests() -> list[Manifest]:
@@ -196,9 +184,7 @@ def manifests() -> list[Manifest]:
         raise SystemExit(f"{VENDOR_ROOT} holds no {MANIFEST_NAME}; nothing is vendored")
     for directory in sorted(path for path in VENDOR_ROOT.iterdir() if path.is_dir()):
         if not (directory / MANIFEST_NAME).is_file():
-            raise SystemExit(
-                f"{directory}: a vendored directory with no {MANIFEST_NAME}"
-            )
+            raise SystemExit(f"{directory}: a vendored directory with no {MANIFEST_NAME}")
     return [Manifest.load(path) for path in found]
 
 
@@ -212,14 +198,10 @@ def check_one(manifest: Manifest) -> list[str]:
         elif sha256(path) != digest:
             findings.append(f"{name}: differs from the recorded copy")
     findings.extend(
-        f"{name}: not part of the recorded copy"
-        for name in manifest.module_tree()
-        if name not in manifest.sha256
+        f"{name}: not part of the recorded copy" for name in manifest.module_tree() if name not in manifest.sha256
     )
     if manifest.aggregate_sha256 != aggregate(manifest.sha256):
-        findings.append(
-            "PROVENANCE.json: the aggregate hash disagrees with the per-file hashes"
-        )
+        findings.append("PROVENANCE.json: the aggregate hash disagrees with the per-file hashes")
     note = manifest.directory / VENDOR_NOTE
     marker = SHA_MARKER.format(sha=manifest.sha)
     if not note.is_file():
@@ -227,9 +209,7 @@ def check_one(manifest: Manifest) -> list[str]:
     elif marker not in note.read_text(encoding="utf-8"):
         findings.append(f"{VENDOR_NOTE}: does not record {marker}")
     if manifest.checker_sha256 != sha256(CHECKER):
-        findings.append(
-            "scripts/vendor.py: changed since the record; re-seal with --refresh"
-        )
+        findings.append("scripts/vendor.py: changed since the record; re-seal with --refresh")
     return findings
 
 
@@ -254,27 +234,19 @@ def git(source: Path, *arguments: str) -> str:
         check=False,
     )
     if result.returncode:
-        raise SystemExit(
-            f"{source}: git {' '.join(arguments)}: {result.stderr.strip()}"
-        )
+        raise SystemExit(f"{source}: git {' '.join(arguments)}: {result.stderr.strip()}")
     return result.stdout.strip()
 
 
 def source_sha(source: Path, given: str | None) -> str:
     if not (source / ".git").exists():
         if not given:
-            raise SystemExit(
-                f"{source}: not a git checkout, so --sha <commit> is required"
-            )
+            raise SystemExit(f"{source}: not a git checkout, so --sha <commit> is required")
         if not re.fullmatch(r"[0-9a-f]{40}", given):
-            raise SystemExit(
-                f"--sha must be a full 40-character commit SHA, not {given!r}"
-            )
+            raise SystemExit(f"--sha must be a full 40-character commit SHA, not {given!r}")
         return given
     if git(source, "status", "--porcelain"):
-        raise SystemExit(
-            f"{source}: the checkout is not clean; refresh from a clean commit"
-        )
+        raise SystemExit(f"{source}: the checkout is not clean; refresh from a clean commit")
     resolved = git(source, "rev-parse", "HEAD")
     if given and given != resolved:
         raise SystemExit(f"{source}: HEAD is {resolved}, not the requested {given}")
@@ -311,9 +283,7 @@ def refresh_from(
     manifest.sha = source_sha(source, given)
     wanted = [name for name in METADATA_FILES if (source / name).is_file()]
     tree = source / manifest.module_path
-    wanted += sorted(
-        str(path.relative_to(source)) for path in tree.rglob("*") if path.is_file()
-    )
+    wanted += sorted(str(path.relative_to(source)) for path in tree.rglob("*") if path.is_file())
     for name in wanted:
         destination = manifest.directory / name
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -322,10 +292,7 @@ def refresh_from(
         if name not in wanted:
             (manifest.directory / name).unlink()
     record(manifest)
-    print(
-        f"vendor/{package}: refreshed from {source} at {manifest.sha} "
-        f"({len(wanted)} files)"
-    )
+    print(f"vendor/{package}: refreshed from {source} at {manifest.sha} ({len(wanted)} files)")
     return 0
 
 
@@ -336,8 +303,7 @@ def reseal() -> int:
         drifted = [
             name
             for name, digest in sorted(manifest.sha256.items())
-            if not (manifest.directory / name).is_file()
-            or sha256(manifest.directory / name) != digest
+            if not (manifest.directory / name).is_file() or sha256(manifest.directory / name) != digest
         ]
         if drifted:
             raise SystemExit(
@@ -351,23 +317,13 @@ def reseal() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--check", action="store_true", help="verify every copy against its record"
-    )
-    parser.add_argument(
-        "--refresh", action="store_true", help="re-copy from a source checkout"
-    )
-    parser.add_argument(
-        "--package", help="the vendored distribution, e.g. bond-api (its directory)"
-    )
-    parser.add_argument(
-        "--from", dest="source", help="a checkout of the upstream package"
-    )
+    parser.add_argument("--check", action="store_true", help="verify every copy against its record")
+    parser.add_argument("--refresh", action="store_true", help="re-copy from a source checkout")
+    parser.add_argument("--package", help="the vendored distribution, e.g. bond-api (its directory)")
+    parser.add_argument("--from", dest="source", help="a checkout of the upstream package")
     parser.add_argument("--sha", help="the upstream commit the copy comes from")
     parser.add_argument("--repository", help="the upstream repository, owner/name")
-    parser.add_argument(
-        "--module-path", help="the copied module tree, e.g. src/bond_api"
-    )
+    parser.add_argument("--module-path", help="the copied module tree, e.g. src/bond_api")
     args = parser.parse_args(argv)
     if args.check == args.refresh:
         parser.error("choose exactly one of --check and --refresh")
