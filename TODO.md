@@ -239,18 +239,22 @@ orchestrator change, proven by a test that imports it from `bond_coordinator`.
 
 ## Verification
 
-Run from this directory. These are the gates; all were green as measured above
-on 2026-08-05.
+Run from this directory. These are the gates. They were re-measured on
+2026-11-04 at the bond-api vendoring tip (the 2026-08-05 figures below them had
+drifted): the suite, the format gate, the types gate and the honesty gates are
+green; the lint gate reports 28 pre-existing findings and is recorded as such in
+[`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md) (W2).
 
 ```bash
 # 1. The enforced gate: full suite + >=90% line+branch coverage on src/
 uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
-#    expected: 173 passed, 0 skipped; "Required test coverage of 90% reached"
+#    expected: 180 passed, 0 skipped; "Required test coverage of 90% reached"
 
 # 2. Lint + format + types
-uvx ruff check src/ scripts/ tests/          # expected: All checks passed!
-uvx ruff format --check src/ scripts/        # expected: 15 files already formatted
-uvx mypy src/ scripts/                       # expected: no issues in 15 source files
+uvx ruff check src/ scripts/ tests/          # expected: 28 findings (all pre-existing) —
+                                             # reads the committed [tool.ruff] table
+uvx ruff format --check --line-length 120 src/ scripts/   # expected: 21 files already formatted
+uvx mypy src/ scripts/                       # expected: no issues in 16 source files
 
 # 3. Honesty gates, individually
 uv run --extra dev pytest tests/test_packaging.py -v         # declared-vs-imported deps, relative
@@ -327,6 +331,16 @@ Live counts updated in [`docs/_generated/COUNTS.md`](docs/_generated/COUNTS.md)
 to the measured split: 840 stmts / 0 missed (100% line), 190 branches /
 10 partial (94.74% branch), 99.03% combined.
 
+### Gates (re-measured 2026-11-04, CPython 3.15.1, darwin) — supersedes the block above
+
+| Gate | Measured at the vendoring tip |
+|---|---|
+| `uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90` | **180 passed, 0 skipped, 0 failed; 99.04%** combined line+branch (846 stmts / 0 missed, 194 branches / 10 partial) |
+| `uvx ruff check src/ scripts/ tests/` | **28 findings, all pre-existing** (16 RUF012, 8 RUF100, 3 I001, 1 RUF022) — not `clean`. The 2026-08-06 row was measured with whatever `uvx ruff` resolved that day; this one with `uvx ruff 0.17.3` (the tools are fetched, not locked) |
+| `uvx ruff format --check --line-length 120 src/ scripts/` | clean (21 files already formatted) |
+| `uvx mypy src/ scripts/` | no issues in 16 source files (`uvx mypy 2.4.1`) |
+| honesty greps (no mocks, pure core, no module-scope `bond_api`) | clean, and each `|| echo` branch is reachable (measured: rc=1, 0 hits in every scope) |
+
 ### Regenerated evidence
 `output/data/mission_report.json`, `output/data/provenance/`, `output/state/`
 and `output/data/manuscript_variables.json` (38 tokens, including two new live
@@ -357,3 +371,65 @@ then `uv run python scripts/generate_manuscript_variables.py`.
 - The new empty-mission guard rejects zero-package missions; a future round
   could also decide whether a *zero-step provider* (empty plan) should be
   rejected instead of passing vacuously.
+
+## Vendoring wave (2026-11-04)
+
+`bond-api` resolved from a sibling checkout (`[tool.uv.sources] bond-api = { path = "../bond-api" }`),
+so a clone of this repository resolved nothing: a sibling-free export fails
+`uv sync` with `Distribution not found at …/bond-api` (rc=2, measured). The upstream bytes are now
+recorded at `vendor/bond-api` (upstream commit `c0362ff0c9d7`, a sha256 per copied file in
+`PROVENANCE.json`, `VENDOR.md` beside it), `[tool.uv.sources]` points at that copy, and `uv.lock`
+was regenerated from that declaration: `uv lock --check` rc=1 → rc=0, two runs byte-identical
+`af2bce2f6aadbcf0`, `--refresh` leaves the file untouched, four changed lines of which two moved,
+and no `../bond-api` remains. All 16 patch blobs match their recorded post-images and
+`scripts/vendor.py --check` reports `vendor/bond-api: ok`, 0 findings.
+
+**W1 — "Inherits workspace settings from root pyproject.toml" was false, twice, and the table this
+change creates now declares the width the tree is written to.** No ancestor `pyproject.toml` declares
+`[tool.ruff]` or `[tool.mypy]` for this checkout, and `uvx ruff check --show-settings` reported
+ruff's default 88 before the change and 120 after it — the file's table is the effective
+configuration. Two-arm control with the table kept in this same file and only its body varying: with
+`line-length = 120` the documented format gate reports 21 files already formatted and the documented
+check reports 28 findings; with that line removed, 11 files would be reformatted and the check
+reports 31 findings. The width is the house rule (`src/STYLE.md` rule 6) and the tree is written to
+it, which is why it is committed rather than passed on every command line.
+
+**W2 — the documented expectations did not hold and are corrected where they are printed.** The
+verification block in this file said `All checks passed!` and `15 files already formatted`; measured
+at this head they are 28 findings (at the committed 120; 31 at the default) and 21 files already
+formatted, with the suite at 180 passed and `mypy src/ scripts/` clean in 16 files. The dated
+2026-08-06 gate table above is left as the record it is and superseded by a re-measured block.
+`docs/_generated/COUNTS.md` is refreshed from the same run and now names the tool versions
+(`uvx ruff 0.17.3`, `uvx mypy 2.4.1`) beside the figures, because neither tool is a declared
+dependency: `uvx` fetches the current release, so a future release can move the finding count with no
+change to this tree.
+
+**W3 — the bundled checker needed re-conforming to the declared width, and the record was
+re-sealed.** `scripts/vendor.py` arrives formatted at 88; at the declared 120 it was the only one of
+21 scoped files the format gate wanted to reformat. It was reformatted (21 insertions / 65 deletions,
+line-joins only) and `scripts/vendor.py --refresh` re-sealed exactly one field —
+`checker_sha256 e7b56b3e…` → `0372e5d8…`, the same value the other 120-width repository in this wave
+produced for the same bytes, so the re-conforming is reproducible, not repository-specific. The
+payload's `aggregate_sha256 2e8fa087be…` is untouched; `--check` is green after the re-seal.
+
+**W4 — recorded, not swept.** (a) Nine prose/command copies of the template-era path
+`projects/working/bond/bond-orchestrator/` are corrected to true statements (`AGENTS.md` ×2,
+`.agents/skills/bond-orchestrator/SKILL.md`, `README.md`'s film-package snippet, `STANDALONE.md` ×2,
+`docs/AGENTS.md`, `docs/testing_philosophy.md`, `manuscript/AGENTS.md`); the README snippet's
+replacement (`Path("..").resolve()`) is verified against the live tree, where it resolves the three
+film packages this suite binds. (b) The eight `source:` records in `data/claim_ledger.yaml` keep that
+path deliberately: each names the tree its claim was measured against, so they are provenance
+records, not instructions — a sweep for the literal path now returns only those eight and
+`scripts/vendor.py`'s docstring. (c) The 28-finding lint debt and the whole-tree formatter red
+outside the documented scoped gate — `tests/test_runner.py` plus five Markdown files with fenced
+blocks (`AGENTS.md`, `README.md`, `docs/protocol.md`, `docs/style_guide.md`, `tests/PATTERNS.md`) —
+are pre-existing at both ends and stay as recorded debt.
+
+Measured at the vendoring tip (CPython 3.15.1, darwin): suite 179 → **180 passed** at 99.04% combined
+(846 statements / 194 branches, 10 partial, unchanged by this pass — the added test is the provenance
+check and `--cov=src` does not measure `scripts/`); `tests/test_film_binding.py` 16 passed (real
+film packages, no `skipif`); `test_packaging.py` 15 passed; `test_determinism_bytes.py` 10 passed;
+the three honesty greps rc=1 with 0 hits each, so every `|| echo "Clean"` branch is reachable;
+`uvx mypy src/` clean in 12 files and `uvx mypy src/ scripts/` in 16; regeneration digest
+`0e914ef1f70e4d18` identical before and after (the mission and token outputs count no files, so
+nothing here moves by design); 21 files under `output/`.

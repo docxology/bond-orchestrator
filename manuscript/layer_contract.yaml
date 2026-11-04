@@ -28,8 +28,8 @@ thin_scripts:
   - scripts/generate_manuscript_variables.py
 
 # No module in src/ or scripts/ may import infrastructure.* — the package runs
-# standalone. bond-api is WIRED as a local path dependency (pyproject
-# [tool.uv.sources]) and consumed only through the adapter above.
+# standalone. bond-api is WIRED as the recorded copy at vendor/bond-api
+# (pyproject [tool.uv.sources]) and consumed only through the adapter above.
 # bond-utilities (mission_io provenance delegation) is not yet wired; see
 # TODO.md integration point 2.
 forbidden_module_scope_imports:

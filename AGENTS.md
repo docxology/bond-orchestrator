@@ -3,8 +3,9 @@
 **BOND-ORCHESTRATOR (codename DAG 00)** — Layer 3 of the BOND suite: the
 mission DAG runner. Executes multi-package film missions end-to-end over the
 `MissionProvider` protocol, with checkpoint/resume and provenance on every
-outcome. This is an active BOND phase-1 package under
-`projects/working/bond/bond-orchestrator/`.
+outcome. This is an active BOND phase-1 package that resolves `bond-api` from the
+recorded copy at `vendor/bond-api`; the real-film gate still requires the film
+packages to be present (`tests/test_film_binding.py` has no `skipif`).
 
 ## Layer contract
 
@@ -62,7 +63,7 @@ per-outcome provenance records.
 
 ```mermaid
 flowchart TB
-    P[projects/working/bond/bond-orchestrator]
+    P[bond-orchestrator]
     P --> SRC[src/bond_orchestrator<br/>Pure core · protocol/graph/planning/retry/runner/missions/providers/film_providers/provenance]
     P --> SC[scripts<br/>run_mission.py · generate_manuscript_variables.py]
     P --> T[tests<br/>no mocks · ≥90% line+branch gate · counts in docs/_generated/COUNTS.md]
@@ -125,9 +126,10 @@ through `uvx` (uv's isolated tool runner), not `uv run`.
 uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90
 
 # 2. Lint + format check (uvx: neither tool is a declared dependency)
-uvx ruff check src/ scripts/ tests/
-uvx ruff format --check --line-length 120 src/ scripts/   # 120-col house rule; no
-                                                         # [tool.ruff] is committed here
+uvx ruff check src/ scripts/ tests/            # reads the committed [tool.ruff] table;
+                                               # expected: 28 findings, all pre-existing
+uvx ruff format --check --line-length 120 src/ scripts/   # 120-col house rule, declared as
+                                                          # [tool.ruff] line-length = 120
 
 # 3. Types
 uvx mypy src/          # the required scope
