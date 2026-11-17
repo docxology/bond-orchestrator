@@ -12,6 +12,24 @@ with checkpoint/resume (intermediate reports persisted to a state dir),
 deterministic retry policy, parallel-stage planning, and provenance
 (written by an independent, deterministic provenance module) for every outcome.
 
+## Orchestration pipeline
+
+```mermaid
+flowchart TD
+    accTitle: bond-orchestrator multi-package mission DAG execution and provenance flow
+    accDescr: A Mission DAG definition, bound film providers and checkpoint or retry options enter graph.py and planning.py for cycle detection, canonical Kahn topological ordering and wavefront stage planning, then runner.py, film_providers.py and retry.py execute all five MissionProvider phases with shared MissionContext and bounded retries, writing consolidated MissionReport and provenance artifacts.
+    I["Mission DAG definition (missions.py), film providers and checkpoint or retry options"]
+    G0["graph.py and planning.py<br/>Reject cycles, compute canonical Kahn topological order and parallel wavefront stages"]
+    G1["film_providers.py, runner.py and retry.py<br/>Bind bond-api providers, thread shared MissionContext across 5 phases, checkpoint and retry"]
+    O["provenance.py and runner.py<br/>Consolidated MissionReport JSON, resumable step checkpoints and outcomes/CSV provenance"]
+
+    I --> G0
+    G0 --> G1
+    G1 --> O
+```
+
+**Source map:** [`protocol.py`](src/bond_orchestrator/protocol.py), [`missions.py`](src/bond_orchestrator/missions.py), [`graph.py`](src/bond_orchestrator/graph.py), [`planning.py`](src/bond_orchestrator/planning.py), [`film_providers.py`](src/bond_orchestrator/film_providers.py), [`runner.py`](src/bond_orchestrator/runner.py), [`retry.py`](src/bond_orchestrator/retry.py), [`provenance.py`](src/bond_orchestrator/provenance.py).
+
 ## What it does
 
 A mission is a DAG of film packages; a dependency edge exists exactly where
@@ -90,7 +108,7 @@ output/state/<mission>/                    # checkpoint step files + manifest
 Every module in `src/bond_orchestrator/`, and what it computes:
 
 | Module | What it does |
-|---|---|
+|---|---:|
 | `protocol.py` | The runner-side mission data model (`Mission`, `MissionPackage`, `MissionContext`, `BriefRecord`, `ReconReport`, `Plan`/`PlanStep`, `ExecutionResult`, `Debrief`) and the `MissionProvider` Protocol. Frozen dataclasses with `as_dict()` for byte-stable serialization. |
 | `graph.py` | Builds the film DAG from `depends_on`, validates it (self-dependency, unknown node, acyclicity), computes the canonical topological order (Kahn's algorithm, sorted worklist), and recovers the ordered cycle path via DFS. |
 | `planning.py` | Wavefront decomposition of the DAG into parallel stages; achievable parallelism (widest stage) and critical path (stage count). |
