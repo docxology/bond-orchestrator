@@ -1,5 +1,7 @@
 # docs/ — bond-orchestrator
 
+[Package maintenance](package-maintenance.md) covers dependency and release records.
+
 Agent-facing documentation hub for BOND-ORCHESTRATOR (codename DAG 00), the
 Layer 3 mission DAG runner of the BOND suite.
 
