@@ -1,5 +1,7 @@
 # docs/ — Agent-Facing Documentation Hub
 
+[Package maintenance](package-maintenance.md) identifies the dependency and citation records.
+
 Technical rulebook for agents and developers working inside the
 `bond-orchestrator` package (BOND-ORCHESTRATOR, codename
 DAG 00). Every document is a constraint, not a suggestion.

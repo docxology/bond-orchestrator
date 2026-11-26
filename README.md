@@ -1,5 +1,7 @@
 # bond-orchestrator
 
+See [package maintenance](docs/package-maintenance.md) for dependency and citation records.
+
 **BOND-ORCHESTRATOR** — codename **DAG 00** — is the Layer 3 mission DAG
 runner of the BOND suite. It executes multi-package film missions end-to-end
 over the `MissionProvider` protocol:
