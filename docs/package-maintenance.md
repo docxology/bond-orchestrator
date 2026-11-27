@@ -1,8 +1,9 @@
 # Maintain the bond-orchestrator package
 
-[Project metadata](../pyproject.toml) declares the package identity and Python
-compatibility (`>=3.11`). [The lockfile](../uv.lock) records resolved
-dependencies. Compare these two files when checking package metadata.
+The distribution at this revision is `bond-orchestrator` 2.5.2, with
+Python compatibility `>=3.11`. This checkout selects Python 3.15 in [`.python-version`](../.python-version).
+[Project metadata](../pyproject.toml) declares the package and compatibility.
+[The lockfile](../uv.lock) records resolved dependency versions and sources.
 
 ## Dependency provenance
 
