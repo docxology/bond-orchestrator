@@ -1,5 +1,8 @@
 # BOND-ORCHESTRATOR — AGENTS.md
 
+The [package maintenance guide](docs/package-maintenance.md) records the
+distribution identity, Python selection, dependency provenance, and citation metadata.
+
 **BOND-ORCHESTRATOR (codename DAG 00)** — Layer 3 of the BOND suite: the
 mission DAG runner. Executes multi-package film missions end-to-end over the
 `MissionProvider` protocol, with checkpoint/resume and provenance on every
